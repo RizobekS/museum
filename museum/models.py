@@ -1,0 +1,239 @@
+# apps/museum/models.py
+from django.db import models
+from django.core.validators import MinValueValidator
+from django.utils.translation import gettext_lazy as _
+from django.conf import settings
+from django.urls import reverse
+from uuid import uuid4
+import os
+from io import BytesIO
+from PIL import Image
+import qrcode
+
+# ---------------------- базовые сущности ----------------------
+
+class Museum(models.Model):
+    slug = models.SlugField(_("Код музея (slug)"), unique=True, max_length=32,
+                            help_text=_("Напр.: ISC"))
+    # названия
+    title_ru = models.CharField(_("Название (RU)"), max_length=255)
+    title_uz = models.CharField(_("Название (UZ)"), max_length=255, blank=True, default="")
+    title_en = models.CharField(_("Название (EN)"), max_length=255, blank=True, default="")
+    # описания
+    description_ru = models.TextField(_("Описание (RU)"), blank=True, default="")
+    description_uz = models.TextField(_("Описание (UZ)"), blank=True, default="")
+    description_en = models.TextField(_("Описание (EN)"), blank=True, default="")
+
+    class Meta:
+        verbose_name = _("Музей")
+        verbose_name_plural = _("Музеи")
+        ordering = ["slug"]
+
+    def __str__(self):
+        return f"{self.title_ru} — {self.slug}"
+
+
+class MuseumBlock(models.Model):
+    museum = models.ForeignKey(Museum, on_delete=models.CASCADE, related_name="blocks",
+                               verbose_name=_("Музей"))
+    slug = models.SlugField(_("Код блока (slug)"), max_length=32,
+                            help_text=_("Напр.: REN2"))
+    # названия
+    title_ru = models.CharField(_("Название (RU)"), max_length=255)
+    title_uz = models.CharField(_("Название (UZ)"), max_length=255, blank=True, default="")
+    title_en = models.CharField(_("Название (EN)"), max_length=255, blank=True, default="")
+    # описания
+    description_ru = models.TextField(_("Описание (RU)"), blank=True, default="")
+    description_uz = models.TextField(_("Описание (UZ)"), blank=True, default="")
+    description_en = models.TextField(_("Описание (EN)"), blank=True, default="")
+
+    class Meta:
+        verbose_name = _("Блок")
+        verbose_name_plural = _("Блоки")
+        unique_together = (("museum", "slug"),)
+        ordering = ["id", "museum__slug", "slug"]
+
+    def __str__(self):
+        return f"{self.title_ru} - {self.slug}"
+
+
+class MuseumSection(models.Model):
+    museum = models.ForeignKey(Museum, on_delete=models.CASCADE, related_name="sections",
+                               verbose_name=_("Музей"))
+    museum_block = models.ForeignKey(MuseumBlock, on_delete=models.CASCADE, related_name="museum_block",
+                               verbose_name=_("Блок"), null=True)
+    code_num = models.PositiveIntegerField(_("Номер экспозиции"), default=0)
+
+    title_ru = models.CharField(_("Название (RU)"), max_length=255)
+    title_uz = models.CharField(_("Название (UZ)"), max_length=255, blank=True, default="")
+    title_en = models.CharField(_("Название (EN)"), max_length=255, blank=True, default="")
+    description_ru = models.TextField(_("Описание (RU)"), blank=True, default="")
+    description_uz = models.TextField(_("Описание (UZ)"), blank=True, default="")
+    description_en = models.TextField(_("Описание (EN)"), blank=True, default="")
+
+    class Meta:
+        verbose_name = _("Экспозиция")
+        verbose_name_plural = _("Экспозиции")
+        ordering = ["museum_block__slug", "code_num"]
+
+    def __str__(self):
+        return f"{self.code_num} - {self.title_ru}"
+
+# ---------------------- вспомогательные upload_to ----------------------
+
+def single_upload_to(instance, filename):
+    ext = filename.split('.')[-1].lower()
+    return f"exhibits/{instance.slug}/single/single.{ext}"
+
+def frame_upload_to(instance, filename):
+    ext = filename.split('.')[-1].lower()
+    idx = f"{instance.frame_index:03d}" if instance.frame_index else "tmp"
+    return f"exhibits/{instance.exhibit.slug}/frames/frame-{idx}.{ext}"
+
+def audio_upload_to(instance, filename):
+    ext = filename.split('.')[-1].lower()
+    return f"exhibits/{instance.slug}/audio/{instance._current_lang}/{uuid4()}.{ext}"
+
+# ---------------------- Экспонат ----------------------
+
+class Exhibit(models.Model):
+    # Ссылки
+    block = models.ForeignKey(MuseumBlock, on_delete=models.PROTECT, null=True,
+                              related_name="exhibits", verbose_name=_("Блок"))
+    section = models.ForeignKey(MuseumSection, on_delete=models.PROTECT, null=True,
+                                related_name="exhibits", verbose_name=_("Экспозиция"))
+
+    # Код и сервисные
+    slug = models.SlugField(_("Код экспоната"), unique=True, max_length=64,
+                            help_text=_("Формат: ISC-REN2-1.0001"))
+    sequence_no = models.PositiveIntegerField(_("Порядковый номер"),
+                                              default=0, editable=False)
+    qr_code = models.ImageField(_("QR Code"), upload_to="exhibits/qr_codes/",
+                                null=True, blank=True)
+
+    # Заголовки
+    title_ru = models.CharField(_("Заголовок (RU)"), max_length=255)
+    title_uz = models.CharField(_("Название (UZ)"), max_length=255, blank=True, default="")
+    title_en = models.CharField(_("Название (EN)"), max_length=255, blank=True, default="")
+    sub_title_ru = models.CharField(_("Sub Title (RU)"), max_length=255, blank=True, default="")
+    sub_title_uz = models.CharField(_("Sub Title (UZ)"), max_length=255, blank=True, default="")
+    sub_title_en = models.CharField(_("Sub Title (EN)"), max_length=255, blank=True, default="")
+
+    # Описания
+    description_ru = models.TextField(_("Описание (RU)"), blank=True, default="")
+    description_uz = models.TextField(_("Описание (UZ)"), blank=True, default="")
+    description_en = models.TextField(_("Описание (EN)"), blank=True, default="")
+
+    # Аудио
+    audio_ru = models.FileField(_("Аудио (RU)"), upload_to="exhibits/tmp", blank=True, null=True)
+    audio_uz = models.FileField(_("Audio (UZ)"), upload_to="exhibits/tmp", blank=True, null=True)
+    audio_en = models.FileField(_("Audio (EN)"), upload_to="exhibits/tmp", blank=True, null=True)
+
+    single_image = models.ImageField(_("Фото (без 3D)"),
+                                     upload_to=single_upload_to,
+                                     blank=True, null=True)
+    is_3d = models.BooleanField(_("3D вращение (360°)"), default=False)
+    # 360
+    frames_required = models.PositiveIntegerField(_("Требуемое число кадров"),
+                         default=36, validators=[MinValueValidator(8)])
+    is_published = models.BooleanField(_("Опубликован"), default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Экспонат")
+        verbose_name_plural = _("Экспонаты")
+        ordering = ["slug"]
+        unique_together = (("block", "section", "sequence_no"),)
+
+    def __str__(self):
+        return self.slug or (self.title_ru or "Exhibit")
+
+    # ---- Cloudimage-360 helpers (оставляем как у вас) ----
+    def ci360_folder(self):
+        return f"{settings.MEDIA_URL}exhibits/{self.slug}/frames/"
+
+    def ci360_filename_pattern(self):
+        return "frame-{index}.webp"
+
+    def has_single_image(self) -> bool:
+        return bool(self.single_image)
+
+    def first_frame_url(self) -> str:
+        """
+        URL первого кадра для превью списка.
+        Заменяем {index} -> 001 и склеиваем с папкой 360.
+        """
+        filename = self.ci360_filename_pattern().replace("{index}", "001")
+        return f"{self.ci360_folder()}{filename}"
+
+    def frames_count(self):
+        return self.photos.filter(is_active=True).count()
+    frames_count.short_description = _("Активные кадры")
+
+    # ---- генерация кода и QR ----
+    def _build_slug(self) -> str:
+        museum_code = self.block.museum.slug
+        block_code = self.block.slug
+        section_code = self.section.code_num or 0
+        seq = self.sequence_no or 0
+        return f"{museum_code}-{block_code}-{section_code}.{seq:04d}"
+
+    def get_qr_path(self) -> str:
+        # /<museum>/<exhibit-code>
+        return f"/{self.block.museum.slug}/{self.slug}"
+
+    def _ensure_slug_and_sequence(self):
+        # выставляем sequence_no, если ещё не задан
+        if not self.sequence_no:
+            last = Exhibit.objects.filter(block=self.block, section=self.section)\
+                                  .order_by("-sequence_no").first()
+            self.sequence_no = 1 if not last else last.sequence_no + 1
+        self.slug = self._build_slug()
+
+    def _generate_qr(self):
+        """
+        Генерируем QR-код (png) с абсолютной ссылкой BASE_URL + /<museum>/<slug>
+        Требуется пакет qrcode[pil]
+        """
+        from django.conf import settings as dj_settings
+        base = getattr(dj_settings, "BASE_URL", "http://127.0.0.1:8000")
+        url = f"{base}{self.get_qr_path()}"
+        img = qrcode.make(url)
+        buf = BytesIO()
+        img.save(buf, format="PNG")
+        buf.seek(0)
+        filename = f"{self.slug}.png"
+        self.qr_code.save(filename, content=buf, save=False)
+
+    def save(self, *args, **kwargs):
+        # если у секции нет номера — назначим следующий
+        if self.section and self.section.code_num == 0:
+            from django.db.models import Max
+            q = MuseumSection.objects.filter(museum_block=self.block)
+            max_num = q.aggregate(Max("code_num"))["code_num__max"] or 0
+            self.section.code_num = max_num + 1
+            self.section.save(update_fields=["code_num"])
+        self._ensure_slug_and_sequence()
+        if not self.qr_code:
+            self._generate_qr()
+        super().save(*args, **kwargs)
+
+
+class ExhibitPhoto(models.Model):
+    exhibit = models.ForeignKey(Exhibit, on_delete=models.CASCADE,
+                                related_name="photos", verbose_name=_("Экспонат"))
+    frame_index = models.PositiveIntegerField(_("Номер кадра"),
+                   validators=[MinValueValidator(1)])
+    image = models.ImageField(_("Изображение"), upload_to=frame_upload_to)
+    is_active = models.BooleanField(_("Активен"), default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Кадр 360°")
+        verbose_name_plural = _("Кадры 360°")
+        unique_together = (("exhibit", "frame_index"),)
+        ordering = ["exhibit", "frame_index"]
+
+    def __str__(self):
+        return f"{self.exhibit.slug} #{self.frame_index}"

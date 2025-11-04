@@ -1,0 +1,131 @@
+{# templates/museum/exhibit_list.html #}
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    .card-360-thumb{
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      width: 100%;
+      border-top-left-radius: .5rem;
+      border-top-right-radius: .5rem;
+    }
+    .badge-absolute{
+      position:absolute; left:.75rem; top:.75rem;
+    }
+    .badge-absolute-right{
+      position:absolute; right:.75rem; top:.75rem;
+    }
+    .overlay-360 {
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background:linear-gradient( to bottom, rgba(0,0,0,.0), rgba(0,0,0,.25) );
+      opacity:0; transition:opacity .2s ease;
+      color:#fff; font-weight:600; letter-spacing:.5px;
+      text-transform:uppercase;
+    }
+    .card:hover .overlay-360 { opacity:1; }
+</style>
+
+<main class="container my-4">
+    {% if items %}
+    <div class="row g-4">
+        {% for it in items %}
+        {% with ex=it.obj %}
+        <div class="col-12 col-sm-6 col-lg-4">
+            <div class="card bg-dark text-warning shadow-2-strong h-100 position-relative">
+
+                {# превью из 1-го кадра 360 #}
+                <div class="position-relative">
+                    <img
+                      src="{% if it.single_url %}{{ it.single_url }}{% else %}{{ it.first_frame_url }}{% endif %}"
+                      alt="{{ it.title }}"
+                      class="card-360-thumb"
+                      loading="lazy"
+                    />
+                    <div class="overlay-360">
+                        <a href="{% url 'museum:exhibit_detail_qr' museum_code=ex.block.museum.slug exhibit_code=ex.slug %}">
+                            <span class="badge badge-light text-dark">Смотреть</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body text-warning border border-warning rounded-3 d-flex flex-column">
+                    <h4 class="card-title mb-2">{{ it.title }}</h4>
+                    <n5 class="card-text small mb-3" style="min-height:3rem;overflow:hidden;">
+                        <i>{{ it.subtitle|truncatechars:140 }}</i>
+                    </n5>
+
+                    <div class="mt-auto d-flex justify-content-between gap-1">
+
+                        <div class="mt-auto text-center">
+                            {% get_available_languages as languages %}
+                            {% for lang_code, lang_name in languages %}
+                            <a href="{% url 'set_language_from_url' lang_code %}?next={{ request.get_full_path }}"
+                               {% if lang_code == LANGUAGE_CODE %}
+                               class="btn btn-primary btn-rounded btn-sm border-radius-md">
+                                {{ lang_name }}
+                                {% else %}
+                                class="btn btn-warning btn-rounded btn-sm border-radius-md">
+                                {{ lang_name }}
+                                {% endif %}
+                            </a>
+                            {% endfor %}
+                        </div>
+                        <img src="{{ ex.qr_code.url }}" width="75" class="rounded" alt="">
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+
+    {# пагинация MDB #}
+    {% if is_paginated %}
+    <nav aria-label="pagination" class="mt-4">
+        <ul class="pagination pagination-circle justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+            {% endif %}
+
+            {% for i in paginator.page_range %}
+            {% if i == page_obj.number %}
+            <li class="page-item active" aria-current="page">
+                <span class="page-link">{{ i }}</span>
+            </li>
+            {% elif i >= page_obj.number|add:-2 and i <= page_obj.number|add:2 %}
+            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center py-5">
+        <h5 class="text-muted">Экспонаты пока не добавлены.</h5>
+        <p class="text-muted">Загрузите кадры 360° и создайте первый экспонат в админ-панели.</p>
+    </div>
+    {% endif %}
+</main>
+{% endblock content %}

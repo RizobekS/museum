@@ -1,0 +1,117 @@
+{# templates/museum/exhibit_detail.html #}
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block styles %}
+<!-- Cloudimage 360 (CDN) -->
+<script src="https://scaleflex.cloudimg.io/v7/plugins/js-cloudimage-360-view/latest/js-cloudimage-360-view.min.js?func=proxy"></script>
+<!--    <script src="{% static '/cloudimage/cloudimage-360.min.js' %}"></script>-->
+
+<style>
+
+    .cloudimage-360-icons-container {
+        top: 25px;
+        right: 50px;
+    }
+    .cloudimage-360-fullscreen-modal {
+        top: 0;
+        bottom: 0;
+    }
+    .cloudimage-360-magnifier-icon {
+        background: url(https://scaleflex.cloudimg.io/v7/filerobot/js-cloudimage-360-view/loupe.svg) 50% 50% / cover no-repeat;
+    }
+    .cloudimage-360-close-fullscreen-icon {
+        background: url(https://scaleflex.cloudimg.io/v7/filerobot/js-cloudimage-360-view/cross.svg) 50% 50% / cover no-repeat;
+    }
+    .cloudimage-360-view-360-circle {
+        margin: auto;
+    }
+    .cloudimage-360-loader {
+        margin: auto;
+    }
+    .cloudimage-360-view-360-icon {
+        background: url(https://scaleflex.cloudimg.io/v7/filerobot/js-cloudimage-360-view/360_view.svg) 50% 50% / cover no-repeat;
+    }
+    .cloudimage-360-box-shadow {
+        top: 0;
+        left: 0;
+    }
+    .cloudimage-360-img-magnifier-glass {
+        border: 3px solid #000;
+        border-radius: 50%;
+    }
+
+    .viewer-wrap { max-width: 900px; margin: 0 auto; }
+</style>
+
+{% endblock styles %}
+{% block content %}
+<div class="container">
+    <div class=""><a href="{% url 'museum:exhibit_list' %}"><i class="fas fa-arrow-left-long me-2"></i>
+        {% trans 'Назад' %}</a></div>
+    <div class="card bg-dark text-warning border border-warning rounded-7 my-3">
+        {% if is_3d and frames_count %}
+        <div
+                class="cloudimage-360"
+                id="{{ filename_pattern }}"
+                data-folder="http://127.0.0.1:8000{{ folder }}"
+                data-filename-x="{{ filename_pattern }}"
+                data-amount-x="{{ frames_count }}"
+                data-index-zero-base="3"
+                data-api-version="null"
+                data-speed="200"
+                data-drag-speed="200"
+                data-draggable="true"
+                data-swipeable="true"
+                data-autoplay="true"
+                data-autoplay-behavior="spin-x"
+                data-fullscreen="true"
+                data-magnifier="25"
+        >
+
+
+        </div>
+        {% elif single_url %}
+          <img src="{{ single_url }}" alt="{{ title_localized }}" class="img-fluid w-100 rounded-top">
+        {% else %}
+          <div class="p-5 text-center text-muted">Нет изображения</div>
+        {% endif %}
+        <div class="card-body">
+            <h3 class="card-title">{{ title_localized }}</h3>
+            <h6 class="card-title"><i>{{ subtitle_localized }}</i></h6>
+            <p class="card-text">
+                {{ description_localized|linebreaks }}
+            </p>
+            <p class="card-text text-center">
+                {% if audio_url %}
+                <audio controls preload="none" style="width:100%;max-width:900px">
+                    <source src="{{ audio_url }}" type="audio/mpeg">
+                </audio>
+                {% endif %}
+            </p>
+            <div class="mt-auto text-center">
+                {% get_available_languages as languages %}
+                {% for lang_code, lang_name in languages %}
+                <a href="{% url 'set_language_from_url' lang_code %}?next={{ request.get_full_path }}"
+                   {% if lang_code == LANGUAGE_CODE %}
+                   class="btn btn-primary btn-rounded btn-sm py-2 ps-3 border-radius-md">
+                    {{ lang_name }}
+                    {% else %}
+                    class="btn btn-warning btn-rounded btn-sm py-2 ps-3 border-radius-md">
+                    {{ lang_name }}
+                    {% endif %}
+                   </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+{% if is_3d and frames_count %}
+<script>window.CI360 && window.CI360.init();</script>
+{% endif %}
+
+{% endblock content %}
