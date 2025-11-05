@@ -215,13 +215,12 @@ class Exhibit(models.Model):
         # 3) Подпись
         caption = self.slug  # например ISC-REN2-1.0001
 
-        # увеличили шрифт → 52 px
         font_path = getattr(settings, "QR_TEXT_FONT_PATH", None)
         font = ImageFont.truetype(font=font_path, size=60)
 
 
         padding = 10
-        caption_h = 70  # увеличили высоту подписи
+        caption_h = 70
         total_w = qr_size + padding * 2
         total_h = qr_size + padding * 2 + caption_h
 

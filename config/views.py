@@ -1,40 +1,33 @@
-from django.http import HttpResponseRedirect
-from django.utils.translation import activate
-from django.views import View
-from urllib.parse import urlparse, urlunparse
-from django.urls import resolve, reverse
+# config/views.py
 from django.conf import settings
-from django.shortcuts import redirect
-
+from django.http import HttpResponseRedirect
+from django.views import View
+from django.utils.translation import activate, get_supported_language_variant
+try:
+    from django.utils.translation import LANGUAGE_SESSION_KEY
+except Exception:
+    LANGUAGE_SESSION_KEY = settings.LANGUAGE_COOKIE_NAME
 
 class ActivateLanguageView(View):
-
     def get(self, request, lang):
-        next_url = request.GET.get('next') or request.META.get('HTTP_REFERER') or '/'
-        parsed = urlparse(next_url)
+        next_url = request.GET.get("next", request.META.get("HTTP_REFERER", "/"))
 
-        if parsed.netloc and parsed.netloc != request.get_host():
-            parsed = parsed._replace(path='/', netloc='')
+        try:
+            lang_code = get_supported_language_variant(lang, strict=False)
+        except Exception:
+            lang_code = settings.LANGUAGE_CODE
 
-        path = parsed.path
-        parts = path.split('/')
+        activate(lang_code)
 
-        if len(parts) > 1 and parts[1] in dict(settings.LANGUAGES).keys():
-            parts[1] = lang
-        else:
-            parts.insert(1, lang)
-        new_path = '/'.join(parts)
+        resp = HttpResponseRedirect(next_url)
+        resp.set_cookie(
+            key=settings.LANGUAGE_COOKIE_NAME,
+            value=lang_code,
+            max_age=60 * 60 * 24 * 365,  # 1 год
+            samesite="Lax",
+        )
 
-        new_parsed = parsed._replace(path=new_path)
-        redirect_url = urlunparse(new_parsed)
+        if hasattr(request, "session"):
+            request.session[LANGUAGE_SESSION_KEY] = lang_code
 
-        activate(lang)
-        response = HttpResponseRedirect(redirect_url)
-        response.set_cookie(settings.LANGUAGE_COOKIE_NAME, lang)
-        return response
-
-        activate(lang)
-        response = HttpResponseRedirect(next_url)
-        response.set_cookie(settings.LANGUAGE_COOKIE_NAME, lang)
-        return response
-
+        return resp

@@ -26,16 +26,17 @@ from museum.autocomplete import SectionAutocomplete
 from museum.views import ExhibitListView
 
 urlpatterns = [
-    path("set_language/<str:lang>/", ActivateLanguageView.as_view(), name="set_language_from_url"),
-    path('i18n/', include('django.conf.urls.i18n')),
-    path("admin/museum/section-autocomplete/", SectionAutocomplete.as_view(),
-         name="section-autocomplete"),
-    path('admin/', admin.site.urls),
-    path("", RedirectView.as_view(url="/isc/", permanent=False)),
-    path("isc/", ExhibitListView.as_view(), name="exhibit_list_plain_isc"),
-]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
-  + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+                  path("admin/", admin.site.urls),
 
-urlpatterns += i18n_patterns(
-    path("", include("museum.urls")),
-)
+                  # переключение языка (см. шаг 2)
+                  path("i18n/", include("django.conf.urls.i18n")),
+                  path("set_language/<str:lang>/", ActivateLanguageView.as_view(), name="set_language_from_url"),
+
+                  # корень -> /isc/
+                  path("", RedirectView.as_view(url="/isc/", permanent=False)),
+                  path("isc/", ExhibitListView.as_view(), name="exhibit_list_plain"),
+
+                  # основной сайт без языкового префикса
+                  path("", include("museum.urls")),
+              ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
+              + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
