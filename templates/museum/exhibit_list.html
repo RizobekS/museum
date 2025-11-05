@@ -61,7 +61,7 @@
 
                     <div class="mt-auto d-flex justify-content-between gap-1">
 
-                        <div class="mt-auto text-center">
+                        <div class="mt-auto col-10 ">
                             {% get_available_languages as languages %}
                             {% for lang_code, lang_name in languages %}
                             <a href="{% url 'set_language_from_url' lang_code %}?next={{ request.get_full_path }}"
@@ -75,7 +75,9 @@
                             </a>
                             {% endfor %}
                         </div>
-                        <img src="{{ ex.qr_code.url }}" width="75" class="rounded" alt="">
+                        <div class="col-2 ">
+                            <img src="{{ ex.qr_code.url }}" width="70" class="rounded img-fluid" alt="">
+                        </div>
                     </div>
                 </div>
             </div>
