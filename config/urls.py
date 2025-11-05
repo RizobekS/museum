@@ -26,6 +26,8 @@ from museum.autocomplete import SectionAutocomplete
 from museum.views import ExhibitListView
 
 urlpatterns = [
+                  path("admin/museum/section-autocomplete/", SectionAutocomplete.as_view(),
+                       name="section-autocomplete"),
                   path("admin/", admin.site.urls),
 
                   # переключение языка (см. шаг 2)
