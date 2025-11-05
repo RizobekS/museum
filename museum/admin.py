@@ -1,6 +1,6 @@
 # apps/museum/admin.py
 from dal import autocomplete
-from django.contrib import admin
+from django.contrib import admin, messages
 from django import forms
 from django.http import JsonResponse
 from django.urls import path
@@ -33,7 +33,6 @@ class ExhibitAdminForm(forms.ModelForm):
         model = Exhibit
         fields = "__all__"
         widgets = {
-            # ВАЖНО: forward=['block'] — DAL будет слать выбранный block.id
             "section": autocomplete.ModelSelect2(
                 url="section-autocomplete",
                 forward=["block"],
@@ -41,18 +40,30 @@ class ExhibitAdminForm(forms.ModelForm):
             ),
         }
 
-    # Дополнительно можно сделать первичную фильтрацию на сервере (не обязательно):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        block_id = None
-        if self.instance and self.instance.pk and self.instance.block_id:
-            block_id = self.instance.block_id
+
+        data = self.data or {}
+        block_id = data.get("block") or (self.instance.block_id if getattr(self.instance, "pk", None) else None)
+
         if block_id:
-            self.fields["section"].queryset = MuseumSection.objects.filter(
-                museum_block_id=block_id
-            ).order_by("code_num", "id")
+            self.fields["section"].queryset = (
+                MuseumSection.objects
+                .filter(museum_block_id=block_id)
+                .order_by("code_num", "id")
+            )
         else:
+            # Нет выбранного блока — список секций пуст
             self.fields["section"].queryset = MuseumSection.objects.none()
+
+    def clean(self):
+        cleaned = super().clean()
+        block = cleaned.get("block")
+        section = cleaned.get("section")
+        # 2) Страховка: если пользователь как-то выбрал «чужую» секцию — отклоняем
+        if block and section and section.museum_block_id != block.id:
+            self.add_error("section", "Экспозиция не принадлежит выбранному блоку.")
+        return cleaned
 
 
 class ExhibitPhotoInline(admin.TabularInline):
@@ -69,6 +80,7 @@ class ExhibitPhotoInline(admin.TabularInline):
 @admin.register(Exhibit)
 class ExhibitAdmin(admin.ModelAdmin):
     form = ExhibitAdminForm
+    actions = ("regenerate_qr",)
 
     list_display = ("title_ru", "slug", "block", "section", "sequence_no",
                     "is_3d", "frames_count", "is_published")
@@ -95,3 +107,15 @@ class ExhibitAdmin(admin.ModelAdmin):
         if obj and obj.is_3d:
             return [ExhibitPhotoInline]
         return []
+
+    def regenerate_qr(self, request, queryset):
+        count = 0
+        for ex in queryset:
+            # заново сгенерируем файл и сохраним
+            ex.qr_code.delete(save=False)
+            ex._generate_qr()
+            ex.save(update_fields=["qr_code"])
+            count += 1
+        self.message_user(request, f"QR обновлён для {count} экспонатов.", level=messages.SUCCESS)
+
+    regenerate_qr.short_description = "Перегенерировать QR"

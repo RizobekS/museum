@@ -7,7 +7,7 @@ from django.urls import reverse
 from uuid import uuid4
 import os
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import qrcode
 
 # ---------------------- базовые сущности ----------------------
@@ -194,14 +194,59 @@ class Exhibit(models.Model):
     def _generate_qr(self):
         """
         Генерируем QR-код (png) с абсолютной ссылкой BASE_URL + /<museum>/<slug>
-        Требуется пакет qrcode[pil]
+        и подписью (код экспоната) под QR.
+        Требуется pillow и qrcode[pil]
         """
         from django.conf import settings as dj_settings
+
+        # 1) Адрес для QR
         base = getattr(dj_settings, "BASE_URL", "http://127.0.0.1:8000")
         url = f"{base}{self.get_qr_path()}"
-        img = qrcode.make(url)
+
+        # 2) Сам QR (квадрат), немного подравняем размер
+        qr = qrcode.QRCode(box_size=10, border=2)
+        qr.add_data(url)
+        qr.make(fit=True)
+        qr_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+        qr_size = 700  # целевой размер квадрата QR
+        qr_img = qr_img.resize((qr_size, qr_size), Image.NEAREST)
+
+        # 3) Подпись — код экспоната (slug), шрифт
+        caption = self.slug  # например ISC-REN2-1.0001
+        try:
+            # Популярный системный шрифт (скорее всего есть в Linux)
+            font = ImageFont.truetype("DejaVuSans.ttf", 36)
+        except Exception:
+            # Фолбэк — встроенный шрифт PIL
+            font = ImageFont.load_default()
+
+        # 4) Полотно: добавим белый отступ вокруг и место для подписи
+        padding = 30  # белые поля по краям
+        caption_h = 70  # высота блока с подписью
+        total_w = qr_size + padding * 2
+        total_h = qr_size + padding * 2 + caption_h
+
+        canvas = Image.new("RGB", (total_w, total_h), "white")
+        draw = ImageDraw.Draw(canvas)
+
+        # 5) Вклеиваем QR по центру
+        canvas.paste(qr_img, (padding, padding))
+
+        # 6) Рисуем подпись по центру внизу
+        #    Для новых версий Pillow: textbbox; для старых: textsize
+        try:
+            bbox = draw.textbbox((0, 0), caption, font=font)
+            text_w, text_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        except Exception:
+            text_w, text_h = draw.textsize(caption, font=font)
+
+        text_x = (total_w - text_w) // 2
+        text_y = padding + qr_size + (caption_h - text_h) // 2
+        draw.text((text_x, text_y), caption, fill="black", font=font)
+
+        # 7) Сохраняем в ImageField (как раньше)
         buf = BytesIO()
-        img.save(buf, format="PNG")
+        canvas.save(buf, format="PNG")
         buf.seek(0)
         filename = f"{self.slug}.png"
         self.qr_code.save(filename, content=buf, save=False)
