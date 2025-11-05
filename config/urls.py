@@ -19,9 +19,11 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.i18n import i18n_patterns
+from django.views.generic import RedirectView
 
 from .views import ActivateLanguageView
 from museum.autocomplete import SectionAutocomplete
+from museum.views import ExhibitListView
 
 urlpatterns = [
     path("set_language/<str:lang>/", ActivateLanguageView.as_view(), name="set_language_from_url"),
@@ -29,6 +31,8 @@ urlpatterns = [
     path("admin/museum/section-autocomplete/", SectionAutocomplete.as_view(),
          name="section-autocomplete"),
     path('admin/', admin.site.urls),
+    path("", RedirectView.as_view(url="/isc/", permanent=False)),
+    path("isc/", ExhibitListView.as_view(), name="exhibit_list_plain_isc"),
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) \
   + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

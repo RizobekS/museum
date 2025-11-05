@@ -75,9 +75,13 @@ class ExhibitListView(ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        return (Exhibit.objects
-                .filter(is_published=True)
-                .order_by("slug"))
+        qs = (Exhibit.objects
+              .filter(is_published=True)
+              .order_by("slug"))
+        museum_slug = self.kwargs.get("museum_slug")
+        if museum_slug:
+            qs = qs.filter(block__museum__slug__iexact=museum_slug)
+        return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -102,6 +106,7 @@ class ExhibitListView(ListView):
             })
         ctx["lang"] = lang
         ctx["items"] = items
+        ctx["museum_slug"] = self.kwargs.get("museum_slug", "")
         return ctx
 
 

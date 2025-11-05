@@ -12,6 +12,8 @@ urlpatterns = [
     # Список экспонатов
     path("", ExhibitListView.as_view(), name="exhibit_list"),
 
+    path("<slug:museum_slug>/", ExhibitListView.as_view(), name="exhibit_list_museum"),
+
     path("<slug:museum_code>/<str:exhibit_code>/", ExhibitDetailByCodesView.as_view(),
          name="exhibit_detail_qr"),
 
