@@ -75,8 +75,37 @@
 
 
                     </div>
+                    {% elif gallery and gallery|length %}
+                    <!-- Slick CSS/JS -->
+                      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+                      <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+                      <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+
+                      <div class="slick-wrap">
+                        <div class="slick-main">
+                          {% for url in gallery %}
+                            <div><img src="{{ url }}" class="img-fluid w-100 rounded-7" alt="{{ title_localized }}"></div>
+                          {% endfor %}
+                        </div>
+                      </div>
+
+                      <script>
+                        (function(){
+                          var init = function(){
+                            if (window.jQuery && jQuery.fn.slick){
+                              jQuery('.slick-main').not('.slick-initialized').slick({
+                                dots: true, infinite: true, speed: 300, slidesToShow: 1, adaptiveHeight: true
+                              });
+                            } else {
+                              setTimeout(init, 150);
+                            }
+                          };
+                          init();
+                        })();
+                      </script>
                     {% elif single_url %}
-                    <img src="{{ single_url }}" alt="{{ title_localized }}" class="img-fluid w-100 rounded-7">
+                      <img src="{{ single_url }}" alt="{{ title_localized }}" class="img-fluid w-100 rounded-7">
+
                     {% else %}
                     <div class="p-5 text-center text-muted">{% trans 'Нет изображения' %}</div>
                     {% endif %}

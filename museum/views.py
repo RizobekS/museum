@@ -11,8 +11,6 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.conf import settings
 
-base_url = settings.BASE_URL
-
 Lang = Literal["ru", "uz", "en", "ar"]
 
 
@@ -106,9 +104,6 @@ class ExhibitListView(ListView):
                 "audio_url": audio_url,
                 "is_3d": ex.is_3d,
                 "single_url": ex.single_image.url if ex.has_single_image() else "",
-                "frames_count": ex.frames_count(),
-                "folder": ex.ci360_folder(),
-                "filename_pattern": ex.ci360_filename_pattern(),
                 "first_frame_url": ex.first_frame_url(),
             })
         ctx["lang"] = lang
@@ -132,7 +127,7 @@ class ExhibitDetailByCodesView(View):
         lang = _resolve_lang(request)
         title, subtitle, description, audio_url = _localized_content(ex, lang)
         ctx = {
-            "base_url": base_url,
+            "base_url": settings.BASE_URL,
             "exhibit": ex,
             "lang": lang,
             "museum_slug": ex.block.museum.slug,
@@ -141,14 +136,13 @@ class ExhibitDetailByCodesView(View):
             "subtitle_localized": subtitle,
             "description_localized": description,
             "audio_url": audio_url,
+            "is_3d": ex.is_3d,
             "frames_count": ex.frames_count(),
             "folder": ex.ci360_folder(),
             "filename_pattern": ex.ci360_filename_pattern(),
-        }
-        ctx.update({
-            "is_3d": ex.is_3d,
             "single_url": ex.single_image.url if ex.has_single_image() else "",
-        })
+            "gallery": [p.image.url for p in ex.gallery_qs()],
+        }
         return  render(request, self.template_name, ctx)
 
 

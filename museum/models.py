@@ -1,4 +1,5 @@
 # apps/museum/models.py
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils.translation import gettext_lazy as _
@@ -87,7 +88,9 @@ def single_upload_to(instance, filename):
 
 def frame_upload_to(instance, filename):
     ext = filename.split('.')[-1].lower()
-    idx = f"{instance.frame_index:03d}" if instance.frame_index else "tmp"
+    if instance.kind == "gallery":
+        return f"exhibits/{instance.exhibit.slug}/gallery/{uuid4()}.{ext}"
+    idx = f"{(instance.frame_index or 0):03d}"
     return f"exhibits/{instance.exhibit.slug}/frames/frame-{idx}.{ext}"
 
 def audio_upload_to(instance, filename):
@@ -164,17 +167,30 @@ class Exhibit(models.Model):
     def has_single_image(self) -> bool:
         return bool(self.single_image)
 
-    def first_frame_url(self) -> str:
-        """
-        URL первого кадра для превью списка.
-        Заменяем {index} -> 001 и склеиваем с папкой 360.
-        """
-        filename = self.ci360_filename_pattern().replace("{index}", "001")
-        return f"{self.ci360_folder()}{filename}"
+    def frames_qs(self):
+        return self.photos.filter(is_active=True, kind="frame").order_by("frame_index")
+
+    def gallery_qs(self):
+        return self.photos.filter(is_active=True, kind="gallery").order_by("created_at", "id")
 
     def frames_count(self):
         return self.photos.filter(is_active=True).count()
     frames_count.short_description = _("Активные кадры")
+
+    def first_frame_url(self) -> str:
+        """
+        Превью для списка:
+        - если 3D — первый кадр 360;
+        - если не 3D — первая фотка из галереи;
+        - иначе — single_image (если задан).
+        """
+        if self.is_3d:
+            filename = self.ci360_filename_pattern().replace("{index}", "001")
+            return f"{self.ci360_folder()}{filename}"
+        g = self.gallery_qs().first()
+        if g and g.image:
+            return g.image.url
+        return self.single_image.url if self.has_single_image() else ""
 
     # ---- генерация кода и QR ----
     def _build_slug(self) -> str:
@@ -265,19 +281,40 @@ class Exhibit(models.Model):
 
 
 class ExhibitPhoto(models.Model):
+    KIND_CHOICES = (
+        ("frame", _("Кадр 360°")),
+        ("gallery", _("Фото галереи")),
+    )
     exhibit = models.ForeignKey(Exhibit, on_delete=models.CASCADE,
                                 related_name="photos", verbose_name=_("Экспонат"))
-    frame_index = models.PositiveIntegerField(_("Номер кадра"),
+    kind = models.CharField(_("Тип"), max_length=16, choices=KIND_CHOICES, default="frame")
+    frame_index = models.PositiveIntegerField(_("Номер кадра"), blank=True, null=True,
                    validators=[MinValueValidator(1)])
     image = models.ImageField(_("Изображение"), upload_to=frame_upload_to)
     is_active = models.BooleanField(_("Активен"), default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = _("Кадр 360°")
-        verbose_name_plural = _("Кадры 360°")
-        unique_together = (("exhibit", "frame_index"),)
-        ordering = ["exhibit", "frame_index"]
+        verbose_name = _("Фото экспоната")
+        verbose_name_plural = _("Фото экспоната")
+        # уникальность индекса только среди кадров 360
+        constraints = [
+            models.UniqueConstraint(
+                fields=["exhibit", "frame_index"],
+                condition=models.Q(kind="frame"),
+                name="uniq_360_frame_per_exhibit"
+            )
+        ]
+        ordering = ["exhibit", "kind", "frame_index", "id"]
+
+    def clean(self):
+        # если это кадр 360 — индекс обязателен
+        if self.kind == "frame" and not self.frame_index:
+            raise ValidationError({"frame_index": _("Для кадров 360 обязателен номер кадра.")})
+        # если это галерея — индекс не нужен
+        if self.kind == "gallery":
+            self.frame_index = None
 
     def __str__(self):
-        return f"{self.exhibit.slug} #{self.frame_index}"
+        tag = "360" if self.kind == "frame" else "GAL"
+        return f"{self.exhibit.slug} [{tag}] #{self.frame_index or '-'}"

@@ -138,3 +138,47 @@ QR_TEXT_FONT_PATH = BASE_DIR / "static" / "museum" / "fonts" / "DejaVuSans.ttf"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+JAZZMIN_SETTINGS = {
+    "site_title": "Museum Admin",
+    "site_header": "Museum Admin",
+    "site_brand": "Museum",
+    "welcome_sign": "Добро пожаловать",
+    "show_ui_builder": False,
+
+    # Иконки моделей (чтобы было красиво)
+    "icons": {
+        "museum.Museum": "fas fa-landmark",
+        "museum.MuseumBlock": "fas fa-layer-group",
+        "museum.MuseumSection": "fas fa-sitemap",
+        "museum.Exhibit": "fas fa-cube",
+        "museum.ExhibitPhoto": "fas fa-images",
+    },
+
+    # Логотип и фавикон (по желанию)
+    # "site_logo": "museum/img/logo.png",
+    # "site_icon": "museum/img/favicon.png",
+
+    # Меню — можно группировать
+    "topmenu_links": [
+        {"name": "Сайт", "url": "/", "permissions": ["museum.view_exhibit"]},
+    ],
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "theme": "darkly",            # Тёмная тема
+    "dark_mode_theme": "darkly",
+    "navbar": "navbar-dark",
+    "accent": "accent-warning",   # Золотистые акценты (под музей)
+    "sidebar": "sidebar-dark",
+    "brand_colour": "navbar-dark",
+
+    # Доп улучшения читаемости
+    "related_modal_active": True,
+    "body_small_text": False,
+    "layout": "fixed",
+    "sidebar_fixed": True,
+    "sidebar_nav_small_text": False,
+    "footer_fixed": False,
+}
+

@@ -70,12 +70,49 @@ class ExhibitAdminForm(forms.ModelForm):
         return cleaned
 
 
-class ExhibitPhotoInline(admin.TabularInline):
+class ExhibitFrameInline(admin.TabularInline):
     model = ExhibitPhoto
     extra = 0
     fields = ("frame_index", "image", "preview", "is_active", "created_at")
     readonly_fields = ("preview", "created_at")
     ordering = ("frame_index",)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(kind="frame")
+
+    def save_new_instance(self, parent, form):
+        obj = form.save(commit=False)
+        obj.exhibit = parent
+        obj.kind = "frame"
+        obj.save()
+        return obj
+
+    def preview(self, obj):
+        if not obj.image:
+            return "-"
+        return format_html('<img src="{}" style="height:70px;border-radius:6px;" />', obj.image.url)
+
+
+
+class ExhibitGalleryInline(admin.TabularInline):
+    model = ExhibitPhoto
+    extra = 0
+    fields = ("image", "preview", "is_active", "created_at")
+    readonly_fields = ("preview", "created_at")
+    ordering = ("created_at", "id")
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(kind="gallery")
+
+    def save_new_instance(self, parent, form):
+        obj = form.save(commit=False)
+        obj.exhibit = parent
+        obj.kind = "gallery"
+        obj.save()
+        return obj
+
     def preview(self, obj):
         if not obj.image:
             return "-"
@@ -107,11 +144,12 @@ class ExhibitAdmin(ImportExportModelAdmin):
         ("Служебное", {"classes": ("collapse",), "fields": ("created_at","updated_at")}),
     )
 
-    # инлайны — только если это 3D экспонат
     def get_inlines(self, request, obj=None):
         if obj and obj.is_3d:
-            return [ExhibitPhotoInline]
-        return []
+            return [ExhibitFrameInline]
+        # если карточка новая (obj is None) — покажем инлайн галереи,
+        # а после сохранения переключится в зависимости от чекбокса is_3d
+        return [ExhibitGalleryInline]
 
     def regenerate_qr(self, request, queryset):
         count = 0
