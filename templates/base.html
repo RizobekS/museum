@@ -7,9 +7,9 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>{% trans 'Экспонаты' %}</title>
-    <meta name="description" content="{% trans '<UNK>' %}"/>
-    <meta name="keywords" content="{% trans '<UNK>' %}"/>
-    <meta name="author" content="{% trans '<UNK> <UNK> <UNK>' %}"/>
+    <meta name="description" content="{% trans '' %}"/>
+    <meta name="keywords" content="{% trans '' %}"/>
+    <meta name="author" content="{% trans '' %}"/>
 
     <!-- Font Awesome -->
     <link
@@ -29,53 +29,90 @@
 
     {% block styles %}
     {% endblock styles %}
+    <style>
+
+        :root{
+          --bg: #0b0b0c;              /* qora fon */
+          --panel: #121214;           /* karta atrofidagi panel rangi */
+          --gold: #d4af37;            /* tilla rang */
+          --gold-soft: #c9a227;
+          --muted: #c2a96b;           /* tilla-so'ngi matnlar */
+          --white: #f7f7f7;
+          --radius: 16px;
+          --shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+        }
+        *{box-sizing:border-box}
+        html,body{height:100%}
+        body{
+          margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+          background: radial-gradient(1200px 800px at 50% -10%, rgba(212,175,55,.06), transparent 60%) , var(--bg);
+          color: var(--gold);
+        }
+        .wrap-custom{max-width:1100px; margin:40px auto; padding:0 20px}
+
+        .card-custom{
+          background: linear-gradient(180deg, #161617, #0f0f10 70%);
+          border:1px solid rgba(212,175,55,.18);
+          border-radius: var(--radius);
+          box-shadow: var(--shadow);
+          overflow:hidden;
+        }
+        .media{
+          background: var(--panel);
+        }
+        .media img{
+          display:block; width:100%; height:auto; border-radius: 12px;
+          filter: contrast(1.02) saturate(1.05);
+          box-shadow: 0 4px 18px rgba(0,0,0,.45);
+        }
+
+        .content{padding: 22px 22px 26px}
+        h1{
+          font-size: clamp(22px, 2.3vw, 30px);
+          line-height:1.25; margin:0 0 12px; font-weight:700;
+          letter-spacing:.1px;
+          background: linear-gradient(180deg, var(--gold), var(--gold-soft));
+          -webkit-background-clip:text; background-clip:text; color:transparent;
+        }
+        .meta{color: var(--muted); font-size:14px; margin-bottom:14px}
+        .desc{color: #e6d9a8; font-size: 15.5px; line-height:1.65}
+
+        .player{
+          margin-top:22px; display:flex; flex-wrap:wrap; gap:14px; align-items:center;
+          background: #0e0e0f; border:1px solid rgba(212,175,55,.22); padding:12px; border-radius:12px
+        }
+        .player audio{ flex: 1 1 260px; filter: drop-shadow(0 2px 10px rgba(0,0,0,.25)); }
+
+        .langs{ display:flex; gap:8px; }
+        .btn{
+          appearance:none; border:none; cursor:pointer; padding:8px 12px; border-radius:999px;
+          color:#0d0d0e; background: linear-gradient(180deg, var(--gold), var(--gold-soft));
+          font-weight:700; letter-spacing:.2px; transition: transform .08s ease, filter .15s ease;
+          white-space:nowrap;
+        }
+        .btn.secondary{ background: rgba(212,175,55,.16); color: var(--gold); border:1px solid rgba(212,175,55,.28); }
+        .btn:hover{ filter: brightness(1.05) }
+        .btn:active{ transform: translateY(1px) }
+
+        .footer{ color:#a99047; opacity:.95; font-size:13px; margin-top:20px }
+        @media (max-width:680px){
+          .player{gap:10px}
+          .btn{padding:8px 10px}
+          .desc{font-size: 15px}
+        }
+
+        p {
+            text-align: justify;
+        }
+
+
+        .text-warning-custom{
+        color: yellow
+        }
+    </style>
 </head>
-<body class="bg-dark text-warning">
+<body class="">
 <!-- Navbar -->
-<section class="p-3 col-12">
-<!--    <div class="container d-flex flex-row-reverse">-->
-<!--        <div class="dropdown">-->
-<!--            <a-->
-<!--                    class="btn btn-warning btn-rounded dropdown-toggle"-->
-<!--                    href="javascript:;"-->
-<!--                    role="button"-->
-<!--                    id="dropdownLANG"-->
-<!--                    data-mdb-dropdown-init-->
-<!--                    data-mdb-ripple-init-->
-<!--                    aria-expanded="false"-->
-<!--            >-->
-<!--                {% if LANGUAGE_CODE == 'ru' %}-->
-<!--                <i class="flag flag-russia"></i>-->
-<!--                {{ LANGUAGE_CODE }}-->
-<!--                {% elif LANGUAGE_CODE == 'uz' %}-->
-<!--                <i class="flag flag-uzbekistan"></i>-->
-<!--                {{ LANGUAGE_CODE }}-->
-<!--                {% else %}-->
-<!--                <i class="flag flag-united-states"></i>-->
-<!--                {{ LANGUAGE_CODE }}-->
-<!--                {% endif %}-->
-<!--            </a>-->
-
-<!--            <ul class="dropdown-menu" aria-labelledby="dropdownLANG">-->
-<!--                {% get_available_languages as languages %}-->
-<!--                {% for lang_code, lang_name in languages %}-->
-<!--                <li>-->
-<!--                    <a href="{% url 'set_language_from_url' lang_code %}?next={{ request.get_full_path }}"-->
-<!--                       class="dropdown-item py-2 ps-3 border-radius-md">-->
-<!--                        {% if lang_code == LANGUAGE_CODE %}-->
-<!--                        <i class="fas fa-circle-check text-primary"></i>-->
-<!--                        {% else %}-->
-<!--                        <i class="fas fa-circle"></i>&nbsp;&nbsp;-->
-
-<!--                        {% endif %}-->
-<!--                        {{ lang_name }}-->
-<!--                    </a>-->
-<!--                </li>-->
-<!--                {% endfor %}-->
-<!--            </ul>-->
-<!--        </div>-->
-<!--    </div>-->
-</section>
 
 {% block content %}
 {% endblock content %}

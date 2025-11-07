@@ -40,44 +40,49 @@
         {% for it in items %}
         {% with ex=it.obj %}
         <div class="col-12 col-sm-6 col-lg-4">
-            <div class="card bg-dark text-warning shadow-2-strong h-100 position-relative">
+            <div class="wrap card card-custom shadow-2-strong h-100 position-relative">
 
                 {# превью из 1-го кадра 360 #}
-                <div class="position-relative">
+                <div class="position-relative media">
                     <img
                       src="{% if it.single_url %}{{ it.single_url }}{% else %}{{ it.first_frame_url }}{% endif %}"
                       alt="{{ it.title }}"
-                      class="card-360-thumb"
+                      class="card-360-thumb rounded-7"
                       loading="lazy"
                     />
                     <div class="overlay-360">
                         <a href="{% url 'museum:exhibit_detail_qr' museum_code=ex.block.museum.slug exhibit_code=ex.slug %}">
-                            <span class="badge badge-light text-dark">Смотреть</span>
+                            <span class="badge badge-light text-dark">{% trans 'Смотреть' %}</span>
                         </a>
                     </div>
                 </div>
 
-                <div class="card-body text-warning border border-warning rounded-3 d-flex flex-column">
-                    <h4 class="card-title mb-2">{{ it.title }}</h4>
-                    <n5 class="card-text small mb-3" style="min-height:3rem;overflow:hidden;">
+                <div class="content card-body rounded-3 d-flex flex-column">
+                    <h1 class="mb-2">{{ it.title }}</h1>
+                    <h5 class="meta small mb-3" style="min-height:3rem;overflow:hidden;">
                         <i>{{ it.subtitle|truncatechars:140 }}</i>
-                    </n5>
+                    </h5>
+                    <div class="play mb-3">
+                        {% if it.audio_url %}
+                        <audio controls preload="none" style="width:100%;max-width:900px">
+                            <source src="{{ it.audio_url }}" type="audio/mpeg">
+                        </audio>
+                        {% endif %}
+                    </div>
 
                     <div class="mt-auto d-flex justify-content-between gap-1">
 
-                        <div class="mt-auto col-10 ">
-                            {% get_available_languages as languages %}
-                            {% for lang_code, lang_name in languages %}
-                            <a href="{% url 'set_language_from_url' lang_code %}?next={{ request.get_full_path }}"
-                               {% if lang_code == LANGUAGE_CODE %}
-                               class="btn btn-primary btn-rounded btn-sm border-radius-md">
-                                {{ lang_name }}
-                                {% else %}
-                                class="btn btn-warning btn-rounded btn-sm border-radius-md">
-                                {{ lang_name }}
-                                {% endif %}
-                            </a>
-                            {% endfor %}
+                        <div class="mt-auto text-center">
+                            <a href="{% url 'set_language_from_url' 'uz' %}?next={{ request.path }}"
+                            class="btn btn-warning btn-sm rounded-7 my-1">O'zbek tili</a>
+                            <a href="{% url 'set_language_from_url' 'ru' %}?next={{ request.path }}"
+                            class="btn btn-warning btn-sm rounded-7 my-1">Русский</a>
+                            <a href="{% url 'set_language_from_url' 'en' %}?next={{ request.path }}"
+                            class="btn btn-warning btn-sm rounded-7 my-1">English</a>
+                            {% if ex.title_ar %}
+                            <a href="{% url 'set_language_from_url' 'ar' %}?next={{ request.path }}"
+                            class="btn btn-warning btn-sm rounded-7 my-1">العربيّة</a>
+                            {% endif %}
                         </div>
                         <div class="col-2 ">
                             <img src="{{ ex.qr_code.url }}" width="70" class="rounded img-fluid" alt="">
@@ -92,7 +97,7 @@
 
     {# пагинация MDB #}
     {% if is_paginated %}
-    <nav aria-label="pagination" class="mt-4">
+    <nav aria-label="pagination" class="mt-4 pb-4">
         <ul class="pagination pagination-circle justify-content-center">
             {% if page_obj.has_previous %}
             <li class="page-item">
@@ -130,7 +135,6 @@
     {% else %}
     <div class="text-center py-5">
         <h5 class="text-muted">Экспонаты пока не добавлены.</h5>
-        <p class="text-muted">Загрузите кадры 360° и создайте первый экспонат в админ-панели.</p>
     </div>
     {% endif %}
 </main>

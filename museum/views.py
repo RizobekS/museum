@@ -9,8 +9,11 @@ from .models import Exhibit
 from django.views.decorators.http import require_GET
 from django.utils.decorators import method_decorator
 from django.views import View
+from django.conf import settings
 
-Lang = Literal["ru", "uz", "en"]
+base_url = settings.BASE_URL
+
+Lang = Literal["ru", "uz", "en", "ar"]
 
 
 def _resolve_lang(request: HttpRequest, url_lang: Optional[str] = None) -> Lang:
@@ -19,10 +22,10 @@ def _resolve_lang(request: HttpRequest, url_lang: Optional[str] = None) -> Lang:
     1) если передан в URL (ru|uz|en) — используем его;
     2) иначе — берём активный язык из Django (LocaleMiddleware / i18n).
     """
-    if url_lang in {"ru", "uz", "en"}:
+    if url_lang in {"ru", "uz", "en", "ar"}:
         return url_lang  # type: ignore
-    lang = (get_language() or "ru").split("-")[0].lower()
-    return lang if lang in {"ru", "uz", "en"} else "ru"  # fallback
+    lang = (get_language() or "ru").lower()
+    return lang if lang in {"ru", "uz", "en", "ar"} else "ru"  # fallback
 
 
 def _localized_content(exhibit: Exhibit, lang: Lang) -> Tuple[str, str, str, Optional[str]]:
@@ -37,13 +40,15 @@ def _localized_content(exhibit: Exhibit, lang: Lang) -> Tuple[str, str, str, Opt
         "ru": exhibit.title_ru or exhibit.title_en or exhibit.title_uz or exhibit.slug,
         "uz": exhibit.title_uz or exhibit.title_ru or exhibit.title_en or exhibit.slug,
         "en": exhibit.title_en or exhibit.title_ru or exhibit.title_uz or exhibit.slug,
+        "ar": exhibit.title_ar or exhibit.title_ru or exhibit.title_uz or exhibit.slug,
     }[lang]
 
     # Подзаголовки
     subtitle = {
-        "ru": exhibit.sub_title_ru or exhibit.sub_title_en or exhibit.sub_title_uz or exhibit.slug,
-        "uz": exhibit.sub_title_uz or exhibit.sub_title_ru or exhibit.sub_title_en or exhibit.slug,
-        "en": exhibit.sub_title_en or exhibit.sub_title_ru or exhibit.sub_title_uz or exhibit.slug,
+        "ru": exhibit.sub_title_ru or exhibit.sub_title_en or exhibit.sub_title_uz or exhibit.description_ru or exhibit.slug,
+        "uz": exhibit.sub_title_uz or exhibit.sub_title_ru or exhibit.sub_title_en or exhibit.description_uz or exhibit.slug,
+        "en": exhibit.sub_title_en or exhibit.sub_title_ru or exhibit.sub_title_uz or exhibit.description_en or exhibit.slug,
+        "ar": exhibit.sub_title_ar or exhibit.sub_title_ru or exhibit.sub_title_uz or exhibit.description_ar or exhibit.slug,
     }[lang]
 
     # Описание
@@ -51,6 +56,7 @@ def _localized_content(exhibit: Exhibit, lang: Lang) -> Tuple[str, str, str, Opt
         "ru": exhibit.description_ru or exhibit.description_en or exhibit.description_uz or "",
         "uz": exhibit.description_uz or exhibit.description_ru or exhibit.description_en or "",
         "en": exhibit.description_en or exhibit.description_ru or exhibit.description_uz or "",
+        "ar": exhibit.description_ar or exhibit.description_ru or exhibit.description_uz or "",
     }[lang]
 
     # Аудио (url либо None)
@@ -58,6 +64,7 @@ def _localized_content(exhibit: Exhibit, lang: Lang) -> Tuple[str, str, str, Opt
         "ru": exhibit.audio_ru or exhibit.audio_en or exhibit.audio_uz,
         "uz": exhibit.audio_uz or exhibit.audio_ru or exhibit.audio_en,
         "en": exhibit.audio_en or exhibit.audio_ru or exhibit.audio_uz,
+        "ar": exhibit.audio_ru or exhibit.audio_en or exhibit.audio_uz,
     }[lang]
     audio_url = audio_field.url if audio_field else None
 
@@ -125,6 +132,7 @@ class ExhibitDetailByCodesView(View):
         lang = _resolve_lang(request)
         title, subtitle, description, audio_url = _localized_content(ex, lang)
         ctx = {
+            "base_url": base_url,
             "exhibit": ex,
             "lang": lang,
             "museum_slug": ex.block.museum.slug,

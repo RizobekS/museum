@@ -1,0 +1,227 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#: .\templates\base.html:10 .\templates\base.html:11 .\templates\base.html:12
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-11-07 18:38+0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: .\config\settings.py:111
+msgid "Oʻzbekcha"
+msgstr ""
+
+#: .\config\settings.py:112
+msgid "Русский"
+msgstr ""
+
+#: .\config\settings.py:113
+msgid "English"
+msgstr ""
+
+#: .\config\settings.py:114
+msgid "العربيّة"
+msgstr ""
+
+#: .\museum\models.py:16
+msgid "Код музея (slug)"
+msgstr ""
+
+#: .\museum\models.py:17
+msgid "Напр.: ISC"
+msgstr ""
+
+#: .\museum\models.py:19 .\museum\models.py:42 .\museum\models.py:67
+msgid "Название (RU)"
+msgstr ""
+
+#: .\museum\models.py:20 .\museum\models.py:43 .\museum\models.py:68
+#: .\museum\models.py:116
+msgid "Название (UZ)"
+msgstr ""
+
+#: .\museum\models.py:21 .\museum\models.py:44 .\museum\models.py:69
+#: .\museum\models.py:117
+msgid "Название (EN)"
+msgstr ""
+
+#: .\museum\models.py:23 .\museum\models.py:46 .\museum\models.py:70
+#: .\museum\models.py:123
+msgid "Описание (RU)"
+msgstr ""
+
+#: .\museum\models.py:24 .\museum\models.py:47 .\museum\models.py:71
+#: .\museum\models.py:124
+msgid "Описание (UZ)"
+msgstr ""
+
+#: .\museum\models.py:25 .\museum\models.py:48 .\museum\models.py:72
+#: .\museum\models.py:125
+msgid "Описание (EN)"
+msgstr ""
+
+#: .\museum\models.py:28 .\museum\models.py:38 .\museum\models.py:62
+msgid "Музей"
+msgstr ""
+
+#: .\museum\models.py:29
+msgid "Музеи"
+msgstr ""
+
+#: .\museum\models.py:39
+msgid "Код блока (slug)"
+msgstr ""
+
+#: .\museum\models.py:40
+msgid "Напр.: REN2"
+msgstr ""
+
+#: .\museum\models.py:51 .\museum\models.py:64 .\museum\models.py:102
+msgid "Блок"
+msgstr ""
+
+#: .\museum\models.py:52
+msgid "Блоки"
+msgstr ""
+
+#: .\museum\models.py:65
+msgid "Номер экспозиции"
+msgstr ""
+
+#: .\museum\models.py:75 .\museum\models.py:104
+msgid "Экспозиция"
+msgstr ""
+
+#: .\museum\models.py:76
+msgid "Экспозиции"
+msgstr ""
+
+#: .\museum\models.py:107
+msgid "Код экспоната"
+msgstr ""
+
+#: .\museum\models.py:108
+msgid "Формат: ISC-REN2-1.0001"
+msgstr ""
+
+#: .\museum\models.py:109
+msgid "Порядковый номер"
+msgstr ""
+
+#: .\museum\models.py:111
+msgid "QR Code"
+msgstr ""
+
+#: .\museum\models.py:115
+msgid "Заголовок (RU)"
+msgstr ""
+
+#: .\museum\models.py:118
+msgid "Sub Title (RU)"
+msgstr ""
+
+#: .\museum\models.py:119
+msgid "Sub Title (UZ)"
+msgstr ""
+
+#: .\museum\models.py:120
+msgid "Sub Title (EN)"
+msgstr ""
+
+#: .\museum\models.py:128
+msgid "Название (AR)"
+msgstr ""
+
+#: .\museum\models.py:129
+msgid "Sub Title (AR)"
+msgstr ""
+
+#: .\museum\models.py:130
+msgid "Описание (AR)"
+msgstr ""
+
+#: .\museum\models.py:133
+msgid "Аудио (RU)"
+msgstr ""
+
+#: .\museum\models.py:134
+msgid "Audio (UZ)"
+msgstr ""
+
+#: .\museum\models.py:135
+msgid "Audio (EN)"
+msgstr ""
+
+#: .\museum\models.py:137
+msgid "Фото (без 3D)"
+msgstr ""
+
+#: .\museum\models.py:140
+msgid "3D вращение (360°)"
+msgstr ""
+
+#: .\museum\models.py:142
+msgid "Требуемое число кадров"
+msgstr ""
+
+#: .\museum\models.py:144
+msgid "Опубликован"
+msgstr ""
+
+#: .\museum\models.py:149 .\museum\models.py:269
+msgid "Экспонат"
+msgstr ""
+
+#: .\museum\models.py:150 .\templates\base.html:9
+msgid "Экспонаты"
+msgstr ""
+
+#: .\museum\models.py:177
+msgid "Активные кадры"
+msgstr ""
+
+#: .\museum\models.py:270
+msgid "Номер кадра"
+msgstr ""
+
+#: .\museum\models.py:272
+msgid "Изображение"
+msgstr ""
+
+#: .\museum\models.py:273
+msgid "Активен"
+msgstr ""
+
+#: .\museum\models.py:277
+msgid "Кадр 360°"
+msgstr ""
+
+#: .\museum\models.py:278
+msgid "Кадры 360°"
+msgstr ""
+
+#: .\templates\museum\exhibit_detail.html:52
+msgid "Назад"
+msgstr ""
+
+#: .\templates\museum\exhibit_detail.html:81
+msgid "Нет изображения"
+msgstr ""
+
+#: .\templates\museum\exhibit_list.html:36
+msgid "Tarixiy xaritalar kolleksiyasi"
+msgstr "Collection of historical maps"
+
+#: .\templates\museum\exhibit_list.html:55
+msgid "Смотреть"
+msgstr ""

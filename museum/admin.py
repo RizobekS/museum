@@ -87,7 +87,7 @@ class ExhibitAdmin(ImportExportModelAdmin):
     form = ExhibitAdminForm
     actions = ("regenerate_qr",)
 
-    list_display = ("title_ru", "slug", "block", "section", "sequence_no",
+    list_display = ("title_ru", "description_ru", "slug", "block", "section", "sequence_no",
                     "is_3d", "frames_count", "is_published")
     list_filter = ("is_published", "is_3d", "block__museum", "block", "section")
     search_fields = ("slug", "title_ru", "title_uz", "title_en",
@@ -100,9 +100,9 @@ class ExhibitAdmin(ImportExportModelAdmin):
         ("Публикация", {"fields": ("is_published", "is_3d", "frames_required")}),
         ("Фото (если без 3D)", {"fields": ("single_image",)}),
         ("Заголовки", {"classes": ("collapse",), "fields":
-            ("title_ru","title_uz","title_en","sub_title_ru","sub_title_uz","sub_title_en")}),
+            ("title_ru","title_uz","title_en","title_ar","sub_title_ru","sub_title_uz","sub_title_en","sub_title_ar")}),
         ("Описания", {"classes": ("collapse",), "fields":
-            ("description_ru","description_uz","description_en")}),
+            ("description_ru","description_uz","description_en","description_ar")}),
         ("Аудио", {"fields": ("audio_ru","audio_uz","audio_en")}),
         ("Служебное", {"classes": ("collapse",), "fields": ("created_at","updated_at")}),
     )

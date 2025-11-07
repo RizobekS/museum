@@ -50,63 +50,68 @@
 <div class="container">
     <div class=""><a href="{% url 'museum:exhibit_list' %}"><i class="fas fa-arrow-left-long me-2"></i>
         {% trans 'Назад' %}</a></div>
-    <div class="card bg-dark text-warning border border-warning rounded-7 my-3">
-        {% if is_3d and frames_count %}
-        <div
-                class="cloudimage-360"
-                id="{{ filename_pattern }}"
-                data-folder="http://127.0.0.1:8000{{ folder }}"
-                data-filename-x="{{ filename_pattern }}"
-                data-amount-x="{{ frames_count }}"
-                data-index-zero-base="3"
-                data-api-version="null"
-                data-speed="200"
-                data-drag-speed="200"
-                data-draggable="true"
-                data-swipeable="true"
-                data-autoplay="true"
-                data-autoplay-behavior="spin-x"
-                data-fullscreen="true"
-                data-magnifier="25"
-        >
+    <div class="d-flex justify-content-center">
+        <div class="col-12 col-sm-10 col-md-8">
+            <div class="wrap card card-custom rounded-7 my-3">
+                <div class="media">
+                    {% if is_3d and frames_count %}
+                    <div
+                            class="cloudimage-360"
+                            id="{{ filename_pattern }}"
+                            data-folder="{{ base_url }}{{ folder }}"
+                            data-filename-x="{{ filename_pattern }}"
+                            data-amount-x="{{ frames_count }}"
+                            data-index-zero-base="3"
+                            data-api-version="null"
+                            data-speed="200"
+                            data-drag-speed="200"
+                            data-draggable="true"
+                            data-swipeable="true"
+                            data-autoplay="true"
+                            data-autoplay-behavior="spin-x"
+                            data-fullscreen="true"
+                            data-magnifier="25"
+                    >
 
 
-        </div>
-        {% elif single_url %}
-          <img src="{{ single_url }}" alt="{{ title_localized }}" class="img-fluid w-100 rounded-top">
-        {% else %}
-          <div class="p-5 text-center text-muted">Нет изображения</div>
-        {% endif %}
-        <div class="card-body">
-            <h3 class="card-title">{{ title_localized }}</h3>
-            <h6 class="card-title"><i>{{ subtitle_localized }}</i></h6>
-            <p class="card-text">
-                {{ description_localized|linebreaks }}
-            </p>
-            <p class="card-text text-center">
-                {% if audio_url %}
-                <audio controls preload="none" style="width:100%;max-width:900px">
-                    <source src="{{ audio_url }}" type="audio/mpeg">
-                </audio>
-                {% endif %}
-            </p>
-            <div class="mt-auto text-center">
-                {% get_available_languages as languages %}
-                {% for lang_code, lang_name in languages %}
-                <a href="{% url 'set_language_from_url' lang_code %}?next={{ request.get_full_path }}"
-                   {% if lang_code == LANGUAGE_CODE %}
-                   class="btn btn-primary btn-rounded btn-sm py-2 ps-3 border-radius-md">
-                    {{ lang_name }}
+                    </div>
+                    {% elif single_url %}
+                    <img src="{{ single_url }}" alt="{{ title_localized }}" class="img-fluid w-100 rounded-7">
                     {% else %}
-                    class="btn btn-warning btn-rounded btn-sm py-2 ps-3 border-radius-md">
-                    {{ lang_name }}
+                    <div class="p-5 text-center text-muted">{% trans 'Нет изображения' %}</div>
                     {% endif %}
-                   </a>
-                {% endfor %}
+                </div>
+                <div class="content card-body">
+                    <h1 class="text-center">{{ title_localized }}</h1>
+                    <h6 class="meta text-center"><i>{{ subtitle_localized }}</i></h6>
+                    <div class="desc">
+                        <p>
+                            {{ description_localized|linebreaks }}
+                        </p>
+                    </div>
+                    <p class="text-center">
+                        {% if audio_url %}
+                        <audio controls preload="none" style="width:100%;max-width:900px">
+                            <source src="{{ audio_url }}" type="audio/mpeg">
+                        </audio>
+                        {% endif %}
+                    </p>
+                    <div class="mt-auto text-center">
+                        <a href="{% url 'set_language_from_url' 'uz' %}?next={{ request.path }}"
+                           class="btn btn-warning btn-sm rounded-7">O'zbek tili</a>
+                        <a href="{% url 'set_language_from_url' 'ru' %}?next={{ request.path }}"
+                           class="btn btn-warning btn-sm rounded-7">Русский</a>
+                        <a href="{% url 'set_language_from_url' 'en' %}?next={{ request.path }}"
+                           class="btn btn-warning btn-sm rounded-7">English</a>
+                        {% if exhibit and exhibit.title_ar %}
+                        <a href="{% url 'set_language_from_url' 'ar' %}?next={{ request.path }}"
+                           class="btn btn-warning btn-sm rounded-7">العربيّة</a>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
 
 </div>
 
