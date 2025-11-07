@@ -5,6 +5,10 @@ from django import forms
 from django.http import JsonResponse
 from django.urls import path
 from django.utils.html import format_html
+from import_export import resources
+from import_export.admin import ImportExportModelAdmin
+from .resources import *
+
 from .models import Museum, MuseumBlock, MuseumSection, Exhibit, ExhibitPhoto
 
 @admin.register(Museum)
@@ -78,7 +82,8 @@ class ExhibitPhotoInline(admin.TabularInline):
         return format_html('<img src="{}" style="height:70px;border-radius:6px;" />', obj.image.url)
 
 @admin.register(Exhibit)
-class ExhibitAdmin(admin.ModelAdmin):
+class ExhibitAdmin(ImportExportModelAdmin):
+    resource_classes = [ExhibitResource]
     form = ExhibitAdminForm
     actions = ("regenerate_qr",)
 

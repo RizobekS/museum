@@ -124,6 +124,11 @@ class Exhibit(models.Model):
     description_uz = models.TextField(_("Описание (UZ)"), blank=True, default="")
     description_en = models.TextField(_("Описание (EN)"), blank=True, default="")
 
+    # Арабский язык
+    title_ar = models.CharField(max_length=255, blank=True, default="")
+    sub_title_ar = models.CharField(max_length=255, blank=True, default="")
+    description_ar = models.TextField(blank=True, default="")
+
     # Аудио
     audio_ru = models.FileField(_("Аудио (RU)"), upload_to="exhibits/tmp", blank=True, null=True)
     audio_uz = models.FileField(_("Audio (UZ)"), upload_to="exhibits/tmp", blank=True, null=True)

@@ -1,6 +1,7 @@
 {# templates/museum/exhibit_list.html #}
 {% extends 'base.html' %}
 {% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 {% load static %}
 
 {% block content %}
@@ -31,6 +32,9 @@
 </style>
 
 <main class="container my-4">
+    <div class="text-center mb-4">
+        <h2>{% trans 'Tarixiy xaritalar kolleksiyasi' %}</h2>
+    </div>
     {% if items %}
     <div class="row g-4">
         {% for it in items %}
