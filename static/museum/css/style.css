@@ -1,0 +1,100 @@
+/* Родитель, чтобы absolute работал поверх картинки */
+.slick-slider-custom { position: relative; }
+
+/* Базовые стили стрелок */
+.slick-prev,
+.slick-next {
+  position: absolute !important;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+
+  width: 58px;
+  height: 58px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0,0,0,.45);
+  box-shadow: 0 6px 16px rgba(0,0,0,.35);
+
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+
+  /* прячем встроенный текст кнопки slick */
+  font-size: 0;
+  line-height: 0;
+  color: transparent;
+  overflow: hidden;
+}
+
+/* убираем дефолтные стрелки slick */
+.slick-prev::before,
+.slick-next::before {
+  content: "";
+}
+
+/* вставляем твои PNG как иконку поверх круга */
+.slick-prev::after,
+.slick-next::after {
+  content: "";
+  display: block;
+  width: 26px;
+  height: 26px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: .95;
+}
+
+/* лево/право и отступы от краёв */
+.slick-prev { left: 22px !important; }
+.slick-next { right: 22px !important; }
+
+/* пути к твоим стрелкам */
+.slick-prev::after { background-image: url("../img/arrow.png"); }    /* ← */
+.slick-next::after { background-image: url("../img/arrow-1.png"); }  /* → */
+
+/* наведение/нажатие/disabled */
+.slick-prev:hover, .slick-next:hover { background: rgba(0,0,0,.65); }
+.slick-prev:active, .slick-next:active { transform: translateY(-50%) scale(.98); }
+.slick-disabled { opacity: .35 !important; cursor: default; }
+
+/* На узких экранах чуть меньше и ближе к краям */
+@media (max-width: 640px) {
+  .slick-prev, .slick-next { width: 48px; height: 48px; }
+  .slick-prev::after, .slick-next::after { width: 22px; height: 22px; }
+  .slick-prev { left: 14px !important; }
+  .slick-next { right: 14px !important; }
+}
+
+/* Тумба-галерея снизу — аккуратные превью (у тебя уже есть базовые) */
+.slider-nav .slick-slide img {
+  border-radius: 10px;
+}
+.slider-nav .slick-current img {
+  outline: 2px solid rgba(212,175,55,.8);
+  outline-offset: 2px;
+}
+
+
+.slider-nav .slick-list .slick-track .slick-slide {
+    opacity: 0.4!important;
+    position: relative!important;
+    height: 120px;
+}
+
+.slider-nav .slick-list .slick-track .slick-slide.slick-current {
+    opacity: 1!important;
+    border: 2px solid;
+}
+.slider-nav .slick-list .slick-track .slick-slide div img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: pointer;
+}

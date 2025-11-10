@@ -73,15 +73,26 @@
                     <div class="mt-auto d-flex justify-content-between gap-1">
 
                         <div class="mt-auto text-center">
-                            <a href="{% url 'set_language_from_url' 'uz' %}?next={{ request.path }}"
-                            class="btn btn-warning btn-sm rounded-7 my-1">O'zbek tili</a>
-                            <a href="{% url 'set_language_from_url' 'ru' %}?next={{ request.path }}"
-                            class="btn btn-warning btn-sm rounded-7 my-1">Русский</a>
-                            <a href="{% url 'set_language_from_url' 'en' %}?next={{ request.path }}"
-                            class="btn btn-warning btn-sm rounded-7 my-1">English</a>
-                            {% if ex.title_ar %}
-                            <a href="{% url 'set_language_from_url' 'ar' %}?next={{ request.path }}"
-                            class="btn btn-warning btn-sm rounded-7 my-1">العربيّة</a>
+                        <a href="{% url 'set_language_from_url' 'uz' %}?next={{ request.get_full_path|urlencode }}"
+                           class="btn btn-sm rounded-7{% if LANGUAGE_CODE == 'uz' %} btn-primary {% else %} btn-warning {% endif %}">
+
+                            O'zbek tili
+                        </a>
+                        <a href="{% url 'set_language_from_url' 'ru' %}?next={{ request.get_full_path|urlencode }}"
+                           class="btn btn-sm rounded-7{% if LANGUAGE_CODE == 'uz' %} btn-primary {% else %} btn-warning {% endif %}">
+
+                            Русский
+                        </a>
+                        <a href="{% url 'set_language_from_url' 'en' %}?next={{ request.get_full_path|urlencode }}"
+                           class="btn btn-sm rounded-7{% if LANGUAGE_CODE == 'uz' %} btn-primary {% else %} btn-warning {% endif %}">
+
+                            English
+                        </a>
+                        {% if exhibit and exhibit.title_ar %}
+                        <a href="{% url 'set_language_from_url' 'ar' %}?next={{ request.get_full_path|urlencode }}"
+                           class="btn btn-sm rounded-7{% if LANGUAGE_CODE == 'uz' %} btn-primary {% else %} btn-warning {% endif %}">
+                            العربيّة
+                        </a>
                             {% endif %}
                         </div>
                         <div class="col-2 ">

@@ -2,6 +2,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 
 {% block styles %}
 <!-- Cloudimage 360 (CDN) -->
@@ -77,32 +78,22 @@
                     </div>
                     {% elif gallery and gallery|length %}
                     <!-- Slick CSS/JS -->
-                      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
-                      <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-                      <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
 
-                      <div class="slick-wrap">
-                        <div class="slick-main">
-                          {% for url in gallery %}
-                            <div><img src="{{ url }}" class="img-fluid w-100 rounded-7" alt="{{ title_localized }}"></div>
-                          {% endfor %}
-                        </div>
-                      </div>
+                    <div class="slick-slider-custom col-12">
+                            <div class="slider-for col-12">
+                                {% for url in gallery %}
+                                    <a href="{{ url }}" data-fancybox title="{{ title_localized }}">
+                                        <img src="{{ url }}" alt="{{ title_localized }}" class="img-fluid"/>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                            <div class="slider-nav p-5 col-12">
+                                {% for url in gallery %}
+                                    <img src="{{ url }}" alt="" class="img-fluid p-3"/>
+                                {% endfor %}
+                            </div>
+                    </div>
 
-                      <script>
-                        (function(){
-                          var init = function(){
-                            if (window.jQuery && jQuery.fn.slick){
-                              jQuery('.slick-main').not('.slick-initialized').slick({
-                                dots: true, infinite: true, speed: 300, slidesToShow: 1, adaptiveHeight: true
-                              });
-                            } else {
-                              setTimeout(init, 150);
-                            }
-                          };
-                          init();
-                        })();
-                      </script>
                     {% elif single_url %}
                       <img src="{{ single_url }}" alt="{{ title_localized }}" class="img-fluid w-100 rounded-7">
 
@@ -126,15 +117,26 @@
                         {% endif %}
                     </p>
                     <div class="mt-auto text-center">
-                        <a href="{% url 'set_language_from_url' 'uz' %}?next={{ request.path }}"
-                           class="btn btn-warning btn-sm rounded-7">O'zbek tili</a>
-                        <a href="{% url 'set_language_from_url' 'ru' %}?next={{ request.path }}"
-                           class="btn btn-warning btn-sm rounded-7">Русский</a>
-                        <a href="{% url 'set_language_from_url' 'en' %}?next={{ request.path }}"
-                           class="btn btn-warning btn-sm rounded-7">English</a>
+                        <a href="{% url 'set_language_from_url' 'uz' %}?next={{ request.get_full_path|urlencode }}"
+                           class="btn btn-sm rounded-7{% if LANGUAGE_CODE == 'uz' %} btn-primary {% else %} btn-warning {% endif %}">
+
+                            O'zbek tili
+                        </a>
+                        <a href="{% url 'set_language_from_url' 'ru' %}?next={{ request.get_full_path|urlencode }}"
+                           class="btn btn-sm rounded-7{% if LANGUAGE_CODE == 'uz' %} btn-primary {% else %} btn-warning {% endif %}">
+
+                            Русский
+                        </a>
+                        <a href="{% url 'set_language_from_url' 'en' %}?next={{ request.get_full_path|urlencode }}"
+                           class="btn btn-sm rounded-7{% if LANGUAGE_CODE == 'uz' %} btn-primary {% else %} btn-warning {% endif %}">
+
+                            English
+                        </a>
                         {% if exhibit and exhibit.title_ar %}
-                        <a href="{% url 'set_language_from_url' 'ar' %}?next={{ request.path }}"
-                           class="btn btn-warning btn-sm rounded-7">العربيّة</a>
+                        <a href="{% url 'set_language_from_url' 'ar' %}?next={{ request.get_full_path|urlencode }}"
+                           class="btn btn-sm rounded-7{% if LANGUAGE_CODE == 'uz' %} btn-primary {% else %} btn-warning {% endif %}">
+                            العربيّة
+                        </a>
                         {% endif %}
                     </div>
                 </div>
@@ -148,4 +150,34 @@
 <script>window.CI360 && window.CI360.init();</script>
 {% endif %}
 
+{% if gallery and gallery|length %}
+{% block page_scripts %}
+                    <script type="text/javascript" src="{% static 'museum/js/fancybox.umd.js' %}"></script>
+                    <script type="text/javascript" src="{% static 'museum/js/slick.min.js' %}"></script>
+                    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const $for = $('.slider-for');
+        if ($for.length && $.fn.slick) {
+          $for.slick({
+            slidesToShow: 1,
+            slidesToScroll: 1,
+            arrows: true,
+            fade: false,
+            adaptiveHeight: false,
+            asNavFor: '.slider-nav',
+            lazyLoad: 'ondemand'  // <-- лениво грузим большие слайды
+          });
+          $('.slider-nav').slick({
+            slidesToShow: 3,
+            slidesToScroll: 1,
+            asNavFor: '.slider-for',
+            focusOnSelect: true,
+            arrows: false,
+            dots: false
+          });
+        }
+      });
+    </script>
+  {% endblock page_scripts %}
+{% endif %}
 {% endblock content %}
