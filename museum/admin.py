@@ -69,54 +69,69 @@ class ExhibitAdminForm(forms.ModelForm):
             self.add_error("section", "Экспозиция не принадлежит выбранному блоку.")
         return cleaned
 
+class ExhibitPhotoFrameForm(forms.ModelForm):
+    class Meta:
+        model = ExhibitPhoto
+        fields = ("frame_index", "image", "is_active",)  # без 'kind' в форме
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # до валидации модели фиксируем тип
+        if self.instance and not self.instance.pk:
+            self.instance.kind = "frame"
+
+class ExhibitPhotoGalleryForm(forms.ModelForm):
+    class Meta:
+        model = ExhibitPhoto
+        fields = ("image", "is_active",)  # без frame_index
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and not self.instance.pk:
+            self.instance.kind = "gallery"
+
 
 class ExhibitFrameInline(admin.TabularInline):
     model = ExhibitPhoto
+    form = ExhibitPhotoFrameForm
     extra = 0
     fields = ("frame_index", "image", "preview", "is_active", "created_at")
     readonly_fields = ("preview", "created_at")
     ordering = ("frame_index",)
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(kind="frame")
-
-    def save_new_instance(self, parent, form):
-        obj = form.save(commit=False)
-        obj.exhibit = parent
-        obj.kind = "frame"
-        obj.save()
-        return obj
+        return super().get_queryset(request).filter(kind="frame")
 
     def preview(self, obj):
-        if not obj.image:
+        if not getattr(obj, "image", None):
             return "-"
-        return format_html('<img src="{}" style="height:70px;border-radius:6px;" />', obj.image.url)
-
+        try:
+            url = obj.image.url
+        except Exception:
+            return "-"
+        return format_html('<img src="{}" style="height:70px;border-radius:6px;" />', url)
 
 
 class ExhibitGalleryInline(admin.TabularInline):
     model = ExhibitPhoto
+    form = ExhibitPhotoGalleryForm
     extra = 0
     fields = ("image", "preview", "is_active", "created_at")
     readonly_fields = ("preview", "created_at")
     ordering = ("created_at", "id")
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.filter(kind="gallery")
-
-    def save_new_instance(self, parent, form):
-        obj = form.save(commit=False)
-        obj.exhibit = parent
-        obj.kind = "gallery"
-        obj.save()
-        return obj
+        return super().get_queryset(request).filter(kind="gallery")
 
     def preview(self, obj):
-        if not obj.image:
+        if not getattr(obj, "image", None):
             return "-"
-        return format_html('<img src="{}" style="height:70px;border-radius:6px;" />', obj.image.url)
+        try:
+            url = obj.image.url
+        except Exception:
+            return "-"
+        return format_html('<img src="{}" style="height:70px;border-radius:6px;" />', url)
+
 
 @admin.register(Exhibit)
 class ExhibitAdmin(ImportExportModelAdmin):

@@ -174,7 +174,7 @@ class Exhibit(models.Model):
         return self.photos.filter(is_active=True, kind="gallery").order_by("created_at", "id")
 
     def frames_count(self):
-        return self.photos.filter(is_active=True).count()
+        return self.photos.filter(is_active=True, kind="frame").count()
     frames_count.short_description = _("Активные кадры")
 
     def first_frame_url(self) -> str:
