@@ -21,14 +21,15 @@ class MuseumBlockAdmin(admin.ModelAdmin):
     list_display = ("title_ru", "slug", "museum")
     list_filter = ("museum",)
     search_fields = ("slug", "title_ru", "title_uz", "title_en")
+    fields = ("museum", "slug", "title_uz", "title_en", "title_ru", "description_uz", "description_en", "description_ru")
 
 @admin.register(MuseumSection)
 class MuseumSectionAdmin(admin.ModelAdmin):
     list_display = ("title_ru", "code_num", "museum_block", "museum")
     list_filter = ("museum", "museum_block",)
     search_fields = ("title_ru", "title_uz", "title_en")
-    fields = ("museum", "museum_block", "code_num", "title_ru", "title_uz", "title_en",
-              "description_ru", "description_uz", "description_en")
+    fields = ("museum", "museum_block", "code_num", "title_uz", "title_en", "title_ru",
+              "description_uz", "description_en", "description_ru")
 
 
 # --- Exhibit form c DAL ---
@@ -72,7 +73,7 @@ class ExhibitAdminForm(forms.ModelForm):
 class ExhibitPhotoFrameForm(forms.ModelForm):
     class Meta:
         model = ExhibitPhoto
-        fields = ("frame_index", "image", "is_active",)  # без 'kind' в форме
+        fields = ("frame_index", "image", "is_active",)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -152,10 +153,10 @@ class ExhibitAdmin(ImportExportModelAdmin):
         ("Публикация", {"fields": ("is_published", "is_3d", "frames_required")}),
         ("Фото (если без 3D)", {"fields": ("single_image",)}),
         ("Заголовки", {"classes": ("collapse",), "fields":
-            ("title_ru","title_uz","title_en","title_ar","sub_title_ru","sub_title_uz","sub_title_en","sub_title_ar")}),
+            ("title_uz","title_en","title_ru","title_ar","sub_title_uz","sub_title_en","sub_title_ru","sub_title_ar")}),
         ("Описания", {"classes": ("collapse",), "fields":
-            ("description_ru","description_uz","description_en","description_ar")}),
-        ("Аудио", {"fields": ("audio_ru","audio_uz","audio_en")}),
+            ("description_uz","description_en","description_ru","description_ar")}),
+        ("Аудио", {"fields": ("audio_uz","audio_en","audio_ru")}),
         ("Служебное", {"classes": ("collapse",), "fields": ("created_at","updated_at")}),
     )
 
