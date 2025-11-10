@@ -163,6 +163,7 @@ JAZZMIN_SETTINGS = {
     "topmenu_links": [
         {"name": "Сайт", "url": "/", "permissions": ["museum.view_exhibit"]},
     ],
+    "language_chooser": True,
 }
 
 JAZZMIN_UI_TWEAKS = {
