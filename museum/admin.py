@@ -1,5 +1,7 @@
 # apps/museum/admin.py
 from dal import autocomplete
+from django.utils.html import strip_tags
+from django.utils.text import Truncator
 from django.contrib import admin, messages
 from django import forms
 from django.http import JsonResponse
@@ -140,12 +142,13 @@ class ExhibitAdmin(ImportExportModelAdmin):
     form = ExhibitAdminForm
     actions = ("regenerate_qr",)
 
-    list_display = ("title_ru", "description_ru", "slug", "block", "section", "sequence_no",
+    list_display = ("title_ru", "desc_ru_200", "slug", "block", "section", "sequence_no",
                     "is_3d", "frames_count", "is_published")
     list_filter = ("is_published", "is_3d", "block__museum", "block", "section")
     search_fields = ("slug", "title_ru", "title_uz", "title_en",
                      "description_ru", "description_uz", "description_en")
     readonly_fields = ("sequence_no", "created_at", "updated_at", "qr_code", "slug")
+    list_select_related = ("block", "section")
 
     fieldsets = (
         ("Связи", {"fields": ("block", "section")}),
@@ -159,6 +162,19 @@ class ExhibitAdmin(ImportExportModelAdmin):
         ("Аудио", {"fields": ("audio_uz","audio_en","audio_ru")}),
         ("Служебное", {"classes": ("collapse",), "fields": ("created_at","updated_at")}),
     )
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        # отбрасываем тяжёлые текстовые поля, которые не показываем в списке
+        return qs.select_related("block", "section").defer(
+            "description_uz", "description_en", "description_ar"
+        )
+
+    @admin.display(description="Описание (RU)", ordering="description_ru")
+    def desc_ru_200(self, obj):
+        text = strip_tags(obj.description_ru or "")
+        # обрезаем по символам без обрыва суррогатов и добавляем многоточие
+        return Truncator(text).chars(200)
 
     def get_inlines(self, request, obj=None):
         if obj and obj.is_3d:
