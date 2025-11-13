@@ -174,7 +174,7 @@ class ExhibitAdmin(ImportExportModelAdmin):
     def desc_ru_200(self, obj):
         text = strip_tags(obj.description_ru or "")
         # обрезаем по символам без обрыва суррогатов и добавляем многоточие
-        return Truncator(text).chars(200)
+        return Truncator(text).chars(100)
 
     def get_inlines(self, request, obj=None):
         if obj and obj.is_3d:
