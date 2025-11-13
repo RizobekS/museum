@@ -267,13 +267,7 @@ class Exhibit(models.Model):
         self.qr_code.save(f"{self.slug}.png", buf, save=False)
 
     def save(self, *args, **kwargs):
-        # если у секции нет номера — назначим следующий
-        if self.section and self.section.code_num == 0:
-            from django.db.models import Max
-            q = MuseumSection.objects.filter(museum_block=self.block)
-            max_num = q.aggregate(Max("code_num"))["code_num__max"] or 0
-            self.section.code_num = max_num + 1
-            self.section.save(update_fields=["code_num"])
+
         self._ensure_slug_and_sequence()
         if not self.qr_code:
             self._generate_qr()

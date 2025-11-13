@@ -142,7 +142,7 @@ class ExhibitAdmin(ImportExportModelAdmin):
     form = ExhibitAdminForm
     actions = ("regenerate_qr",)
 
-    list_display = ("title_ru", "desc_ru_200", "slug", "block", "section", "sequence_no",
+    list_display = ("title_ru", "desc_ru_100", "slug", "block", "section", "sequence_no",
                     "is_3d", "frames_count", "is_published")
     list_filter = ("is_published", "is_3d", "block__museum", "block", "section")
     search_fields = ("slug", "title_ru", "title_uz", "title_en",
@@ -171,7 +171,7 @@ class ExhibitAdmin(ImportExportModelAdmin):
         )
 
     @admin.display(description="Описание (RU)", ordering="description_ru")
-    def desc_ru_200(self, obj):
+    def desc_ru_100(self, obj):
         text = strip_tags(obj.description_ru or "")
         # обрезаем по символам без обрыва суррогатов и добавляем многоточие
         return Truncator(text).chars(100)
