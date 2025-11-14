@@ -87,11 +87,6 @@
                                     </a>
                                 {% endfor %}
                             </div>
-                            <div class="slider-nav p-5 col-12">
-                                {% for url in gallery %}
-                                    <img src="{{ url }}" alt="" class="img-fluid p-3"/>
-                                {% endfor %}
-                            </div>
                     </div>
 
                     {% elif single_url %}
@@ -152,32 +147,18 @@
 
 {% if gallery and gallery|length %}
 {% block page_scripts %}
-                    <script type="text/javascript" src="{% static 'museum/js/fancybox.umd.js' %}"></script>
-                    <script type="text/javascript" src="{% static 'museum/js/slick.min.js' %}"></script>
-                    <script>
-      document.addEventListener('DOMContentLoaded', function () {
-        const $for = $('.slider-for');
-        if ($for.length && $.fn.slick) {
-          $for.slick({
-            slidesToShow: 1,
-            slidesToScroll: 1,
-            arrows: true,
-            fade: false,
-            adaptiveHeight: false,
-            asNavFor: '.slider-nav',
-            lazyLoad: 'ondemand'  // <-- лениво грузим большие слайды
-          });
-          $('.slider-nav').slick({
-            slidesToShow: 3,
-            slidesToScroll: 1,
-            asNavFor: '.slider-for',
-            focusOnSelect: true,
-            arrows: false,
-            dots: false
-          });
-        }
+<script type="text/javascript" src="{% static 'museum/js/fancybox.umd.js' %}"></script>
+<script type="text/javascript" src="{% static 'museum/js/slick.min.js' %}"></script>
+<script>
+      $('.slider-for').slick({
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        arrows: true,
+        fade: false,
+        adaptiveHeight: false,
+        lazyLoad: 'ondemand'
       });
-    </script>
-  {% endblock page_scripts %}
+</script>
+{% endblock page_scripts %}
 {% endif %}
 {% endblock content %}
