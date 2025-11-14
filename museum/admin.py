@@ -187,10 +187,11 @@ class ExhibitAdmin(ImportExportModelAdmin):
         count = 0
         for ex in queryset:
             # заново сгенерируем файл и сохраним
+            ex.slug = ex._build_slug()
             ex.qr_code.delete(save=False)
             ex._generate_qr()
-            ex.save(update_fields=["qr_code"])
+            ex.save(update_fields=["slug", "qr_code"])
             count += 1
-        self.message_user(request, f"QR обновлён для {count} экспонатов.", level=messages.SUCCESS)
+        self.message_user(request, f"QR и slug обновлён для {count} экспонатов.", level=messages.SUCCESS)
 
-    regenerate_qr.short_description = "Перегенерировать QR"
+    regenerate_qr.short_description = "Перегенерировать QR и slug"
