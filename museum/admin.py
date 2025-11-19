@@ -6,6 +6,7 @@ from django.contrib import admin, messages
 from django import forms
 from django.http import JsonResponse
 from django.urls import path
+from django.db.models import Q, Count
 from django.utils.html import format_html
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
@@ -13,17 +14,21 @@ from .resources import *
 
 from .models import Museum, MuseumBlock, MuseumSection, Exhibit, ExhibitPhoto
 
+
 @admin.register(Museum)
 class MuseumAdmin(admin.ModelAdmin):
     list_display = ("title_ru", "slug")
     search_fields = ("slug", "title_ru", "title_uz", "title_en")
+
 
 @admin.register(MuseumBlock)
 class MuseumBlockAdmin(admin.ModelAdmin):
     list_display = ("title_ru", "slug", "museum")
     list_filter = ("museum",)
     search_fields = ("slug", "title_ru", "title_uz", "title_en")
-    fields = ("museum", "slug", "title_uz", "title_en", "title_ru", "description_uz", "description_en", "description_ru")
+    fields = ("museum", "slug", "title_uz", "title_en", "title_ru", "description_uz", "description_en",
+              "description_ru")
+
 
 @admin.register(MuseumSection)
 class MuseumSectionAdmin(admin.ModelAdmin):
@@ -72,6 +77,7 @@ class ExhibitAdminForm(forms.ModelForm):
             self.add_error("section", "Экспозиция не принадлежит выбранному блоку.")
         return cleaned
 
+
 class ExhibitPhotoFrameForm(forms.ModelForm):
     class Meta:
         model = ExhibitPhoto
@@ -82,6 +88,7 @@ class ExhibitPhotoFrameForm(forms.ModelForm):
         # до валидации модели фиксируем тип
         if self.instance and not self.instance.pk:
             self.instance.kind = "frame"
+
 
 class ExhibitPhotoGalleryForm(forms.ModelForm):
     class Meta:
@@ -143,7 +150,8 @@ class ExhibitAdmin(ImportExportModelAdmin):
     actions = ("regenerate_qr",)
 
     list_display = ("title_ru", "desc_ru_100", "slug", "block", "section", "sequence_no",
-                    "is_3d", "frames_count", "is_published")
+                    "is_3d", "frames_count", "photos_total", "has_photos", "has_frames", "has_gallery",
+                    "is_published")
     list_filter = ("is_published", "is_3d", "block__museum", "block", "section")
     search_fields = ("slug", "title_ru", "title_uz", "title_en",
                      "description_ru", "description_uz", "description_en")
@@ -156,19 +164,49 @@ class ExhibitAdmin(ImportExportModelAdmin):
         ("Публикация", {"fields": ("is_published", "is_3d", "frames_required")}),
         ("Фото (если без 3D)", {"fields": ("single_image",)}),
         ("Заголовки", {"classes": ("collapse",), "fields":
-            ("title_uz","title_en","title_ru","title_ar","sub_title_uz","sub_title_en","sub_title_ru","sub_title_ar")}),
+            ("title_uz", "title_en", "title_ru", "title_ar", "sub_title_uz", "sub_title_en", "sub_title_ru",
+             "sub_title_ar")}),
         ("Описания", {"classes": ("collapse",), "fields":
-            ("description_uz","description_en","description_ru","description_ar")}),
-        ("Аудио", {"fields": ("audio_uz","audio_en","audio_ru")}),
-        ("Служебное", {"classes": ("collapse",), "fields": ("created_at","updated_at")}),
+            ("description_uz", "description_en", "description_ru", "description_ar")}),
+        ("Аудио", {"fields": ("audio_uz", "audio_en", "audio_ru")}),
+        ("Служебное", {"classes": ("collapse",), "fields": ("created_at", "updated_at")}),
     )
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        # отбрасываем тяжёлые текстовые поля, которые не показываем в списке
-        return qs.select_related("block", "section").defer(
+        # было defer — оставляем, чтобы не тянуть тяжёлые тексты
+        qs = qs.select_related("block", "section").defer(
             "description_uz", "description_en", "description_ar"
         )
+        # ← ДОБАВИЛИ: быстрые счётчики по связанным фото
+        return qs.annotate(
+            _frames_n=Count("photos", filter=Q(photos__kind="frame", photos__is_active=True)),
+            _gallery_n=Count("photos", filter=Q(photos__kind="gallery", photos__is_active=True)),
+            _total_n=Count("photos", filter=Q(photos__is_active=True)),
+        )
+
+    # Показать «есть/нет» одной картинкой-галочкой:
+    @admin.display(boolean=True, description="Фото?")
+    def has_photos(self, obj):
+        return (getattr(obj, "_total_n", 0) or 0) > 0 or bool(getattr(obj, "single_image", None))
+
+    @admin.display(boolean=True, description="360 кадры?")
+    def has_frames(self, obj):
+        return (getattr(obj, "_frames_n", 0) or 0) > 0
+
+    @admin.display(boolean=True, description="Галерея?")
+    def has_gallery(self, obj):
+        return (getattr(obj, "_gallery_n", 0) or 0) > 0 or bool(getattr(obj, "single_image", None))
+
+    @admin.display(description="Фото, шт.")
+    def photos_total(self, obj):
+        """
+        Общее кол-во фото: активные 360 + активные галереи + 1, если задан single_image.
+        """
+        total = (getattr(obj, "_total_n", 0) or 0)
+        if getattr(obj, "single_image", None):
+            total += 1
+        return total
 
     @admin.display(description="Описание (RU)", ordering="description_ru")
     def desc_ru_100(self, obj):
