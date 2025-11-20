@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.urls import path
 from django.db.models import Q, Count
 from django.utils.html import format_html
+from django.contrib.admin import SimpleListFilter
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from .resources import *
@@ -142,6 +143,27 @@ class ExhibitGalleryInline(admin.TabularInline):
             return "-"
         return format_html('<img src="{}" style="height:70px;border-radius:6px;" />', url)
 
+class HasPhotosFilter(SimpleListFilter):
+    title = "Наличие фото"
+    parameter_name = "has_photos"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", "Есть фото"),
+            ("no", "Без фото"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.filter(
+                Q(photos__is_active=True) | ~Q(single_image="")
+            ).distinct()
+        elif self.value() == "no":
+            # Экспонаты без активных фото и без single_image
+            return queryset.exclude(
+                Q(photos__is_active=True) | ~Q(single_image="")
+            ).distinct()
+        return queryset
 
 @admin.register(Exhibit)
 class ExhibitAdmin(ImportExportModelAdmin):
@@ -152,7 +174,7 @@ class ExhibitAdmin(ImportExportModelAdmin):
     list_display = ("title_ru", "desc_ru_100", "slug", "block", "section", "sequence_no",
                     "is_3d", "frames_count", "photos_total", "has_photos",
                     "is_published")
-    list_filter = ("is_published", "is_3d", "block__museum", "block", "section")
+    list_filter = ("is_published", "is_3d", HasPhotosFilter, "block__museum", "block", "section")
     search_fields = ("slug", "title_ru", "title_uz", "title_en",
                      "description_ru", "description_uz", "description_en")
     readonly_fields = ("sequence_no", "created_at", "updated_at", "qr_code", "slug")
