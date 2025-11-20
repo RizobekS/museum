@@ -202,9 +202,9 @@ class ExhibitAdmin(ImportExportModelAdmin):
         )
         # ← ДОБАВИЛИ: быстрые счётчики по связанным фото
         return qs.annotate(
-            _frames_n=Count("photos", filter=Q(photos__kind="frame", photos__is_active=True)),
-            _gallery_n=Count("photos", filter=Q(photos__kind="gallery", photos__is_active=True)),
-            _total_n=Count("photos", filter=Q(photos__is_active=True)),
+            _frames_n=Count("photos", filter=Q(photos__kind="frame", photos__is_active=True), distinct=True),
+            _gallery_n=Count("photos", filter=Q(photos__kind="gallery", photos__is_active=True), distinct=True),
+            _total_n=Count("photos", filter=Q(photos__is_active=True), distinct=True),
         )
 
     # Показать «есть/нет» одной картинкой-галочкой:
