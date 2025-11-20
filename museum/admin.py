@@ -150,7 +150,7 @@ class ExhibitAdmin(ImportExportModelAdmin):
     actions = ("regenerate_qr",)
 
     list_display = ("title_ru", "desc_ru_100", "slug", "block", "section", "sequence_no",
-                    "is_3d", "frames_count", "photos_total", "has_photos", "has_frames", "has_gallery",
+                    "is_3d", "frames_count", "photos_total", "has_photos",
                     "is_published")
     list_filter = ("is_published", "is_3d", "block__museum", "block", "section")
     search_fields = ("slug", "title_ru", "title_uz", "title_en",
@@ -189,14 +189,6 @@ class ExhibitAdmin(ImportExportModelAdmin):
     @admin.display(boolean=True, description="Фото?")
     def has_photos(self, obj):
         return (getattr(obj, "_total_n", 0) or 0) > 0 or bool(getattr(obj, "single_image", None))
-
-    @admin.display(boolean=True, description="360 кадры?")
-    def has_frames(self, obj):
-        return (getattr(obj, "_frames_n", 0) or 0) > 0
-
-    @admin.display(boolean=True, description="Галерея?")
-    def has_gallery(self, obj):
-        return (getattr(obj, "_gallery_n", 0) or 0) > 0 or bool(getattr(obj, "single_image", None))
 
     @admin.display(description="Фото, шт.")
     def photos_total(self, obj):
