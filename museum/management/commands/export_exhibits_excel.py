@@ -1,5 +1,3 @@
-# museum/management/commands/export_exhibits_excel.py
-
 import os
 
 from django.core.management.base import BaseCommand
@@ -56,14 +54,10 @@ class Command(BaseCommand):
             "title_en",
             "title_ar",
             "slug",
-            "sub_title_ru",
-            "sub_title_uz",
-            "sub_title_en",
-            "sub_title_ar",
-            "description_ru",
-            "description_uz",
-            "description_en",
-            "description_ar",
+            "sub_title_ru",  # sub_title_ru + description_ru
+            "sub_title_uz",  # sub_title_uz + description_uz
+            "sub_title_en",  # sub_title_en + description_en
+            "sub_title_ar",  # sub_title_ar + description_ar
             "qr_code",
             "single_image",
         ]
@@ -83,14 +77,10 @@ class Command(BaseCommand):
             "title_en": 35,
             "title_ar": 35,
             "slug": 25,
-            "sub_title_ru": 35,
-            "sub_title_uz": 35,
-            "sub_title_en": 35,
-            "sub_title_ar": 35,
-            "description_ru": 60,
-            "description_uz": 60,
-            "description_en": 60,
-            "description_ar": 60,
+            "sub_title_ru": 80,
+            "sub_title_uz": 80,
+            "sub_title_en": 80,
+            "sub_title_ar": 80,
             "qr_code": 20,
             "single_image": 25,
         }
@@ -103,8 +93,25 @@ class Command(BaseCommand):
         qr_col_idx = headers.index("qr_code") + 1
         single_img_col_idx = headers.index("single_image") + 1
 
+        def combine(sub_title: str | None, description: str | None) -> str:
+            """
+            Объединяем sub_title и description в одну строку с переносом.
+            Если одного из них нет, возвращаем то, что есть.
+            """
+            sub_title = sub_title or ""
+            description = description or ""
+            if sub_title and description:
+                return f"{sub_title}\n\n{description}"
+            return sub_title or description or ""
+
         row_idx = 2
         for ex in qs:
+            # Скомбинированные тексты по языкам
+            text_ru = combine(ex.sub_title_ru, ex.description_ru)
+            text_uz = combine(ex.sub_title_uz, ex.description_uz)
+            text_en = combine(ex.sub_title_en, ex.description_en)
+            text_ar = combine(ex.sub_title_ar, ex.description_ar)
+
             # Текстовые поля
             row_values = [
                 ex.block.title_ru if ex.block else "",
@@ -114,21 +121,16 @@ class Command(BaseCommand):
                 ex.title_en or "",
                 ex.title_ar or "",
                 ex.slug or "",
-                ex.sub_title_ru or "",
-                ex.sub_title_uz or "",
-                ex.sub_title_en or "",
-                ex.sub_title_ar or "",
-                ex.description_ru or "",
-                ex.description_uz or "",
-                ex.description_en or "",
-                ex.description_ar or "",
+                text_ru,
+                text_uz,
+                text_en,
+                text_ar,
                 "",  # qr_code (картинка)
                 "",  # single_image (картинка)
             ]
 
             for col_idx, value in enumerate(row_values, start=1):
                 cell = ws.cell(row=row_idx, column=col_idx, value=value)
-                # заворачиваем тексты, чтобы не улетало в космос по ширине
                 cell.alignment = Alignment(
                     horizontal="left",
                     vertical="top",
@@ -144,14 +146,12 @@ class Command(BaseCommand):
                 if os.path.exists(qr_path):
                     try:
                         img = XLImage(qr_path)
-                        # Чуть уменьшим (openpyxl меряет в пикселях примерно)
                         img.width = 150
                         img.height = 150
 
                         cell_addr = f"{get_column_letter(qr_col_idx)}{row_idx}"
                         ws.add_image(img, cell_addr)
 
-                        # увеличиваем высоту строки под картинку
                         ws.row_dimensions[row_idx].height = max(
                             ws.row_dimensions[row_idx].height, 120
                         )
