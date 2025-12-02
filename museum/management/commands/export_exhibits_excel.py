@@ -54,7 +54,7 @@ class Command(BaseCommand):
             "title_ru",
             "title_uz",
             "title_en",
-            "title_ar"
+            "title_ar",
             "slug",
             "sub_title_ru",
             "sub_title_uz",
