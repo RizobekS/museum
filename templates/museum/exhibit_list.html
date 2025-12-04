@@ -35,6 +35,24 @@
     <div class="text-center mb-4">
         <h2>{% trans 'Tarixiy xaritalar kolleksiyasi' %}</h2>
     </div>
+    <form method="get" class="mb-4">
+        <div class="row g-2 justify-content-center align-items-center col-6">
+            <div class="input-group col-12 col-md-6">
+                <div class="form-outline" data-mdb-input-init>
+                    <input type="text" name="q" id="form1" class="form-control" value="{{ query|default_if_none:'' }}"/>
+                    <label class="form-label" for="form1">{% trans 'Поиск по названию или коду экспоната' %}</label>
+                </div>
+                <button type="submit" class="btn btn-primary" data-mdb-ripple-init>
+                    <i class="fas fa-search"></i>
+                </button>
+                {% if query %}
+                <a href="?" class="btn btn-primary" data-mdb-ripple-init>
+                    {% trans 'Сбросить' %}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </form>
     {% if items %}
     <div class="row g-4">
         {% for it in items %}
@@ -112,7 +130,9 @@
         <ul class="pagination pagination-circle justify-content-center">
             {% if page_obj.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                <a class="page-link"
+                   href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}"
+                   aria-label="Previous">
                     <span aria-hidden="true">&laquo;</span>
                 </a>
             </li>
@@ -121,18 +141,25 @@
             {% endif %}
 
             {% for i in paginator.page_range %}
-            {% if i == page_obj.number %}
-            <li class="page-item active" aria-current="page">
-                <span class="page-link">{{ i }}</span>
-            </li>
-            {% elif i >= page_obj.number|add:-2 and i <= page_obj.number|add:2 %}
-            <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
-            {% endif %}
+                {% if i == page_obj.number %}
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">{{ i }}</span>
+                    </li>
+                {% elif i >= page_obj.number|add:-2 and i <= page_obj.number|add:2 %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ i }}{% if query %}&q={{ query|urlencode }}{% endif %}">
+                            {{ i }}
+                        </a>
+                    </li>
+                {% endif %}
             {% endfor %}
 
             {% if page_obj.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                <a class="page-link"
+                   href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query|urlencode }}{% endif %}"
+                   aria-label="Next">
                     <span aria-hidden="true">&raquo;</span>
                 </a>
             </li>

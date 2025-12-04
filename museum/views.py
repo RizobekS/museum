@@ -1,6 +1,7 @@
 # apps/museum/views.py
 import os
 from typing import Literal, Tuple, Optional
+from django.db.models import Q
 from django.http import JsonResponse, Http404, HttpRequest
 from django.shortcuts import get_object_or_404, render
 from django.utils.translation import get_language
@@ -84,9 +85,20 @@ class ExhibitListView(ListView):
         qs = (Exhibit.objects
               .filter(is_published=True)
               .order_by("slug"))
+
         museum_slug = self.kwargs.get("museum_slug")
         if museum_slug:
             qs = qs.filter(block__museum__slug__iexact=museum_slug)
+
+        query = self.request.GET.get("q", "").strip()
+        if query:
+            qs = qs.filter(
+                Q(title_ru__icontains=query) |
+                Q(title_uz__icontains=query) |
+                Q(title_en__icontains=query) |
+                Q(slug__icontains=query)
+            )
+
         return qs
 
     def get_context_data(self, **kwargs):
@@ -110,6 +122,7 @@ class ExhibitListView(ListView):
         ctx["lang"] = lang
         ctx["items"] = items
         ctx["museum_slug"] = self.kwargs.get("museum_slug", "")
+        ctx["query"] = self.request.GET.get("q", "").strip()
         return ctx
 
 
