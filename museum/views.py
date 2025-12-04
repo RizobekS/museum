@@ -1,4 +1,5 @@
 # apps/museum/views.py
+import os
 from typing import Literal, Tuple, Optional
 from django.http import JsonResponse, Http404, HttpRequest
 from django.shortcuts import get_object_or_404, render
@@ -126,6 +127,19 @@ class ExhibitDetailByCodesView(View):
 
         lang = _resolve_lang(request)
         title, subtitle, description, audio_url = _localized_content(ex, lang)
+
+        video_url = ex.video.url if ex.video else ""
+        video_mime = ""
+        if ex.video:
+            ext = os.path.splitext(ex.video.name)[1].lower()  # ".mp4"
+            mime_map = {
+                ".mp4": "video/mp4",
+                ".webm": "video/webm",
+                ".mov": "video/quicktime",
+                ".avi": "video/x-msvideo",
+            }
+            video_mime = mime_map.get(ext, "video/mp4")
+
         ctx = {
             "base_url": settings.BASE_URL,
             "exhibit": ex,
@@ -142,6 +156,8 @@ class ExhibitDetailByCodesView(View):
             "filename_pattern": ex.ci360_filename_pattern(),
             "single_url": ex.single_image.url if ex.has_single_image() else "",
             "gallery": [p.image.url for p in ex.gallery_qs()],
+            "video_url": video_url,
+            "video_mime": video_mime,
         }
         return  render(request, self.template_name, ctx)
 

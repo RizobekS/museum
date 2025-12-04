@@ -1,7 +1,7 @@
 # apps/museum/models.py
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, FileExtensionValidator
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.urls import reverse
@@ -140,6 +140,10 @@ class Exhibit(models.Model):
     single_image = models.ImageField(_("Фото (без 3D)"),
                                      upload_to=single_upload_to,
                                      blank=True, null=True)
+
+    #video
+    video = models.FileField(_("Видео экспоната"), upload_to="exhibits/video", blank=True, null=True, help_text=_("форматы - mp4,webm"),
+                             validators=[FileExtensionValidator(allowed_extensions=['mp4', 'webm'])])
     is_3d = models.BooleanField(_("3D вращение (360°)"), default=False)
     # 360
     frames_required = models.PositiveIntegerField(_("Требуемое число кадров"),

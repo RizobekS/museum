@@ -191,6 +191,7 @@ class ExhibitAdmin(ImportExportModelAdmin):
         ("Описания", {"classes": ("collapse",), "fields":
             ("description_uz", "description_en", "description_ru", "description_ar")}),
         ("Аудио", {"fields": ("audio_uz", "audio_en", "audio_ru")}),
+        ("Видео", {"fields": ("video",)}),
         ("Служебное", {"classes": ("collapse",), "fields": ("created_at", "updated_at")}),
     )
 
