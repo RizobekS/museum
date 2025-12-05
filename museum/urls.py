@@ -4,6 +4,7 @@ from .views import (
     ExhibitListView,
     ExhibitDetailByCodesView,
     ExhibitCi360Manifest,
+    sections_by_block,
 )
 
 app_name = "museum"
@@ -11,7 +12,7 @@ app_name = "museum"
 urlpatterns = [
     # Список экспонатов
     path("", ExhibitListView.as_view(), name="exhibit_list"),
-
+    path("sections-json/", sections_by_block, name="sections_by_block"),
     path("<slug:museum_slug>/", ExhibitListView.as_view(), name="exhibit_list_museum"),
 
     path("<slug:museum_code>/<str:exhibit_code>/", ExhibitDetailByCodesView.as_view(),

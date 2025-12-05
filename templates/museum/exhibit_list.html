@@ -29,6 +29,18 @@
       text-transform:uppercase;
     }
     .card:hover .overlay-360 { opacity:1; }
+
+    form .form-select {
+      background-color: rgba(15,15,16,0.95);
+      color: #f7f7f7;
+      border-radius: 999px;
+      border: 1px solid rgba(212,175,55,.35);
+    }
+
+    form .form-select:focus {
+      box-shadow: 0 0 0 0.2rem rgba(212,175,55,.3);
+    }
+
 </style>
 
 <main class="container my-4">
@@ -36,17 +48,69 @@
         <h2>{% trans 'Tarixiy xaritalar kolleksiyasi' %}</h2>
     </div>
     <form method="get" class="mb-4">
-        <div class="row g-2 justify-content-center align-items-center col-6">
-            <div class="input-group col-12 col-md-6">
+        <div class="row g-3 justify-content-center">
+            <!-- Поиск -->
+            <div class="col-12 col-md-4">
                 <div class="form-outline" data-mdb-input-init>
-                    <input type="text" name="q" id="form1" class="form-control" value="{{ query|default_if_none:'' }}"/>
-                    <label class="form-label" for="form1">{% trans 'Поиск по названию или коду экспоната' %}</label>
+                    <input
+                        type="text"
+                        name="q"
+                        id="searchInput"
+                        class="form-control"
+                        value="{{ query|default_if_none:'' }}"
+                    />
+                    <label class="form-label" for="searchInput">
+                        {% trans 'Поиск по названию или коду экспоната' %}
+                    </label>
                 </div>
+            </div>
+            <!-- Фильтр по блоку -->
+            <div class="col-6 col-md-3">
+                <select class="form-select" name="block" id="filterBlock">
+                    <option value="">{% trans 'Все блоки' %}</option>
+                    {% for block in blocks %}
+                        <option value="{{ block.id }}"
+                            {% if selected_block_id|default:'' == block.id|stringformat:"s" %}selected{% endif %}>
+                            {% if LANGUAGE_CODE == 'uz' %}
+                                {{ block.title_uz|default:block.title_ru }}
+                            {% elif LANGUAGE_CODE == 'en' %}
+                                {{ block.title_en|default:block.title_ru }}
+                            {% else %}
+                                {{ block.title_ru }}
+                            {% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Фильтр по экспозиции -->
+            <div class="col-6 col-md-3">
+                <select class="form-select" name="section" id="filterSection">
+                    <option value="">{% trans 'Все экспозиции' %}</option>
+                    {% for section in sections %}
+                        <option value="{{ section.id }}"
+                            {% if selected_section_id|default:'' == section.id|stringformat:"s" %}selected{% endif %}>
+                            {{ section.code_num }} —
+                            {% if LANGUAGE_CODE == 'uz' %}
+                                {{ section.title_uz|default:section.title_ru }}
+                            {% elif LANGUAGE_CODE == 'en' %}
+                                {{ section.title_en|default:section.title_ru }}
+                            {% else %}
+                                {{ section.title_ru }}
+                            {% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Кнопки -->
+            <div class="col-12 col-md-2 d-flex gap-2 justify-content-center align-items-center">
                 <button type="submit" class="btn btn-primary" data-mdb-ripple-init>
-                    <i class="fas fa-search"></i>
+                    <i class="fas fa-search me-1"></i>
+                    {% trans 'Искать' %}
                 </button>
-                {% if query %}
-                <a href="?" class="btn btn-primary" data-mdb-ripple-init>
+                {% if query or selected_block_id or selected_section_id %}
+                <a href="?" class="btn btn-outline-light" data-mdb-ripple-init>
                     {% trans 'Сбросить' %}
                 </a>
                 {% endif %}
@@ -177,3 +241,47 @@
     {% endif %}
 </main>
 {% endblock content %}
+
+{% block page_scripts %}
+{{ block.super }}
+<script>
+  (function ($) {
+    $(function () {
+      const $block = $('#filterBlock');
+      const $section = $('#filterSection');
+
+      $block.on('change', function () {
+        const blockId = $(this).val();
+
+        // сбрасываем список экспозиций
+        $section.html('<option value="">{% trans "Все экспозиции" %}</option>');
+
+        if (!blockId) {
+          // если блок снят, оставляем только "Все экспозиции"
+          return;
+        }
+
+        $.ajax({
+          url: "{% url 'museum:sections_by_block' %}",
+          data: {block_id: blockId},
+          dataType: "json",
+          success: function (data) {
+            if (!data || !data.results) return;
+
+            data.results.forEach(function (item) {
+              const opt = $('<option/>')
+                .val(item.id)
+                .text(item.title);
+              $section.append(opt);
+            });
+          },
+          error: function () {
+            // без драм и алертов, просто ничего не делаем
+          }
+        });
+      });
+    });
+  })(jQuery);
+</script>
+{% endblock page_scripts %}
+

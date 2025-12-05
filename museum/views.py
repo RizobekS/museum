@@ -6,7 +6,7 @@ from django.http import JsonResponse, Http404, HttpRequest
 from django.shortcuts import get_object_or_404, render
 from django.utils.translation import get_language
 from django.views.generic import ListView, DetailView
-from .models import Exhibit
+from .models import Exhibit, MuseumBlock, MuseumSection
 
 from django.views.decorators.http import require_GET
 from django.utils.decorators import method_decorator
@@ -99,12 +99,20 @@ class ExhibitListView(ListView):
                 Q(slug__icontains=query)
             )
 
+        block_id = self.request.GET.get("block", "").strip()
+        if block_id:
+            qs = qs.filter(block_id=block_id)
+
+        section_id = self.request.GET.get("section", "").strip()
+        if section_id:
+            qs = qs.filter(section_id=section_id)
+
         return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         lang = _resolve_lang(self.request)
-        # Примешиваем локализованные поля для карточек
+
         items = []
         for ex in ctx["exhibits"]:
             title, subtitle, desc, audio_url = _localized_content(ex, lang)
@@ -119,11 +127,86 @@ class ExhibitListView(ListView):
                 "single_url": ex.single_image.url if ex.has_single_image() else "",
                 "first_frame_url": ex.first_frame_url(),
             })
+
+        museum_slug = self.kwargs.get("museum_slug", "")
+
+        # выбранные значения фильтров
+        query = self.request.GET.get("q", "").strip()
+        selected_block_id = self.request.GET.get("block", "").strip()
+        selected_section_id = self.request.GET.get("section", "").strip()
+
+        # список блоков (в рамках музея, если он есть)
+        blocks_qs = MuseumBlock.objects.all()
+        if museum_slug:
+            blocks_qs = blocks_qs.filter(museum__slug__iexact=museum_slug)
+        blocks_qs = blocks_qs.order_by("id")
+
+        # список секций: если блок выбран — только его секции,
+        # иначе все секции в рамках музея (чтобы начальный список не был пустой)
+        if selected_block_id:
+            sections_qs = MuseumSection.objects.filter(
+                museum_block_id=selected_block_id
+            ).order_by("code_num", "id")
+        else:
+            sections_qs = MuseumSection.objects.all()
+            if museum_slug:
+                sections_qs = sections_qs.filter(museum__slug__iexact=museum_slug)
+            sections_qs = sections_qs.order_by("museum_block__slug", "code_num")
+
         ctx["lang"] = lang
         ctx["items"] = items
-        ctx["museum_slug"] = self.kwargs.get("museum_slug", "")
-        ctx["query"] = self.request.GET.get("q", "").strip()
+        ctx["museum_slug"] = museum_slug
+        ctx["query"] = query
+
+        ctx["blocks"] = blocks_qs
+        ctx["sections"] = sections_qs
+        ctx["selected_block_id"] = selected_block_id
+        ctx["selected_section_id"] = selected_section_id
+
         return ctx
+
+@require_GET
+def sections_by_block(request):
+    """
+    AJAX-эндпоинт:
+    GET /sections-json/?block_id=ID
+    Возвращает список экспозиций для выбранного блока.
+    """
+    block_id = request.GET.get("block_id")
+    if not block_id:
+        return JsonResponse({"results": []})
+
+    try:
+        block_id_int = int(block_id)
+    except (TypeError, ValueError):
+        return JsonResponse({"results": []})
+
+    lang = _resolve_lang(request)
+
+    sections_qs = (
+        MuseumSection.objects
+        .filter(museum_block_id=block_id_int)
+        .order_by("code_num", "id")
+    )
+
+    results = []
+    for s in sections_qs:
+        if lang == "uz":
+            title = s.title_uz or s.title_ru or s.title_en
+        elif lang == "en":
+            title = s.title_en or s.title_ru or s.title_uz
+        elif lang == "ar":
+            title = s.title_en or s.title_ru or s.title_uz
+        else:
+            title = s.title_ru or s.title_uz or s.title_en
+
+        results.append({
+            "id": s.id,
+            "title": f"{s.code_num} - {title}",
+        })
+
+    return JsonResponse({"results": results})
+
 
 
 class ExhibitDetailByCodesView(View):
