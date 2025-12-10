@@ -36,7 +36,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--no-images",
-            action="true",
+            action="store_true",
             default=False,
             help="Не встраивать картинки в Excel (только текст, файл будет значительно легче).",
         )
