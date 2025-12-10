@@ -217,7 +217,7 @@ class Command(BaseCommand):
                             cell_addr = f"{get_column_letter(qr_col_idx)}{row_idx}"
                             ws.add_image(img, cell_addr)
                             ws.row_dimensions[row_idx].height = max(
-                                ws.row_dimensions[row_idx].height, 120
+                                ws.row_dimensions[row_idx].height, 140
                             )
 
                 # Вставка single_image
