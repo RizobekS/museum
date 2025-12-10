@@ -9,11 +9,13 @@ from openpyxl.drawing.image import Image as XLImage
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
 
+from PIL import Image as PILImage
+
 from museum.models import Exhibit
 
 
 class Command(BaseCommand):
-    help = "Экспорт экспонатов в Excel с картинками (QR и single_image)"
+    help = "Экспорт экспонатов в Excel с картинками (QR и single_image), с фильтром по блоку и оптимизацией изображений."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -27,6 +29,24 @@ class Command(BaseCommand):
             action="store_true",
             help="Выгружать только экспонаты, у которых есть QR или single_image",
         )
+        parser.add_argument(
+            "--block-slug",
+            "-b",
+            help="Фильтровать экспонаты по slug блока (MuseumBlock.slug), напр.: REN2",
+        )
+        parser.add_argument(
+            "--no-images",
+            action="true",
+            default=False,
+            help="Не встраивать картинки в Excel (только текст, файл будет значительно легче).",
+        )
+        parser.add_argument(
+            "--thumb-size",
+            type=int,
+            default=400,
+            help="Максимальный размер стороны превью в пикселях (по умолчанию 400). "
+                 "Используется только если картинки встраиваются.",
+        )
 
     def handle(self, *args, **options):
         output_path = options["output"]
@@ -36,10 +56,27 @@ class Command(BaseCommand):
 
         qs = Exhibit.objects.select_related("block", "section")
 
+        # Фильтр по блоку
+        block_slug = options.get("block_slug")
+        if block_slug:
+            qs = qs.filter(block__slug=block_slug)
+            self.stdout.write(self.style.WARNING(f"Фильтруем по блоку: {block_slug}"))
+
+        # Фильтр по наличию фоток
         if options["only_with_photos"]:
             qs = qs.filter(
                 models.Q(qr_code__isnull=False) | ~models.Q(single_image="")
             ).distinct()
+
+        no_images = options.get("no_images", False)
+        thumb_size = options.get("thumb_size", 400)
+
+        if no_images:
+            self.stdout.write(self.style.WARNING("Картинки НЕ будут встроены в Excel (режим --no-images)."))
+        else:
+            self.stdout.write(self.style.WARNING(
+                f"Картинки будут встроены с уменьшением до {thumb_size} px по большей стороне."
+            ))
 
         wb = Workbook()
         ws = wb.active
@@ -104,7 +141,33 @@ class Command(BaseCommand):
                 return f"{sub_title}\n\n{description}"
             return sub_title or description or ""
 
+        def create_thumbnail_image(path: str, max_side: int) -> XLImage | None:
+            """
+            Открываем оригинал, реально уменьшаем через Pillow и
+            возвращаем openpyxl Image, основанный на уменьшенном изображении.
+            Если что-то пошло не так – возвращаем None.
+            """
+            try:
+                pil_img = PILImage.open(path)
+            except Exception as e:
+                self.stderr.write(f"Не удалось открыть изображение {path}: {e}")
+                return None
+
+            # Уменьшаем, сохраняя пропорции
+            pil_img.thumbnail((max_side, max_side), PILImage.LANCZOS)
+
+            try:
+                img = XLImage(pil_img)
+            except Exception as e:
+                self.stderr.write(f"Не удалось создать Excel-изображение для {path}: {e}")
+                return None
+
+            return img
+
         row_idx = 2
+        count = qs.count()
+        self.stdout.write(self.style.SUCCESS(f"Найдено экспонатов для экспорта: {count}"))
+
         for ex in qs:
             # Скомбинированные тексты по языкам
             text_ru = combine(ex.sub_title_ru, ex.description_ru)
@@ -137,44 +200,33 @@ class Command(BaseCommand):
                     wrap_text=True,
                 )
 
-            # Высота строки по умолчанию (если будут картинки – увеличим)
+            # Базовая высота строки
             ws.row_dimensions[row_idx].height = 40
 
-            # Вставка QR-кода
-            if ex.qr_code and ex.qr_code.name:
-                qr_path = os.path.join(settings.MEDIA_ROOT, ex.qr_code.name)
-                if os.path.exists(qr_path):
-                    try:
-                        img = XLImage(qr_path)
-                        img.width = 150
-                        img.height = 150
+            if not no_images:
+                # Вставка QR-кода
+                if ex.qr_code and ex.qr_code.name:
+                    qr_path = os.path.join(settings.MEDIA_ROOT, ex.qr_code.name)
+                    if os.path.exists(qr_path):
+                        img = create_thumbnail_image(qr_path, thumb_size)
+                        if img:
+                            cell_addr = f"{get_column_letter(qr_col_idx)}{row_idx}"
+                            ws.add_image(img, cell_addr)
+                            ws.row_dimensions[row_idx].height = max(
+                                ws.row_dimensions[row_idx].height, 120
+                            )
 
-                        cell_addr = f"{get_column_letter(qr_col_idx)}{row_idx}"
-                        ws.add_image(img, cell_addr)
-
-                        ws.row_dimensions[row_idx].height = max(
-                            ws.row_dimensions[row_idx].height, 120
-                        )
-                    except Exception as e:
-                        self.stderr.write(f"Не удалось вставить QR для {ex.slug}: {e}")
-
-            # Вставка single_image
-            if ex.single_image and ex.single_image.name:
-                img_path = os.path.join(settings.MEDIA_ROOT, ex.single_image.name)
-                if os.path.exists(img_path):
-                    try:
-                        img = XLImage(img_path)
-                        img.width = 200
-                        img.height = 200
-
-                        cell_addr = f"{get_column_letter(single_img_col_idx)}{row_idx}"
-                        ws.add_image(img, cell_addr)
-
-                        ws.row_dimensions[row_idx].height = max(
-                            ws.row_dimensions[row_idx].height, 160
-                        )
-                    except Exception as e:
-                        self.stderr.write(f"Не удалось вставить single_image для {ex.slug}: {e}")
+                # Вставка single_image
+                if ex.single_image and ex.single_image.name:
+                    img_path = os.path.join(settings.MEDIA_ROOT, ex.single_image.name)
+                    if os.path.exists(img_path):
+                        img = create_thumbnail_image(img_path, thumb_size)
+                        if img:
+                            cell_addr = f"{get_column_letter(single_img_col_idx)}{row_idx}"
+                            ws.add_image(img, cell_addr)
+                            ws.row_dimensions[row_idx].height = max(
+                                ws.row_dimensions[row_idx].height, 160
+                            )
 
             row_idx += 1
 
