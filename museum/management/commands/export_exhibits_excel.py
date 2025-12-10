@@ -1,4 +1,5 @@
 import os
+from io import BytesIO
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -141,23 +142,26 @@ class Command(BaseCommand):
                 return f"{sub_title}\n\n{description}"
             return sub_title or description or ""
 
-        def create_thumbnail_image(path: str, max_side: int) -> XLImage | None:
+        def create_thumbnail_image(path: str, max_side: int):
             """
-            Открываем оригинал, реально уменьшаем через Pillow и
-            возвращаем openpyxl Image, основанный на уменьшенном изображении.
-            Если что-то пошло не так – возвращаем None.
+            Открываем оригинал, уменьшаем через Pillow, сохраняем в память (BytesIO)
+            и создаём openpyxl Image из этого буфера.
             """
             try:
-                pil_img = PILImage.open(path)
+                with PILImage.open(path) as pil_img:
+                    pil_img = pil_img.convert("RGBA")  # на всякий случай
+                    pil_img.thumbnail((max_side, max_side), PILImage.LANCZOS)
+
+                    buf = BytesIO()
+                    # Excel нормально переваривает PNG
+                    pil_img.save(buf, format="PNG")
+                    buf.seek(0)
             except Exception as e:
-                self.stderr.write(f"Не удалось открыть изображение {path}: {e}")
+                self.stderr.write(f"Не удалось подготовить превью для {path}: {e}")
                 return None
 
-            # Уменьшаем, сохраняя пропорции
-            pil_img.thumbnail((max_side, max_side), PILImage.LANCZOS)
-
             try:
-                img = XLImage(pil_img)
+                img = XLImage(buf)
             except Exception as e:
                 self.stderr.write(f"Не удалось создать Excel-изображение для {path}: {e}")
                 return None
