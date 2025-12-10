@@ -70,7 +70,7 @@ class Command(BaseCommand):
             ).distinct()
 
         no_images = options.get("no_images", False)
-        thumb_size = options.get("thumb_size", 400)
+        thumb_size = options.get("thumb_size", 120)
 
         if no_images:
             self.stdout.write(self.style.WARNING("Картинки НЕ будут встроены в Excel (режим --no-images)."))
@@ -217,7 +217,7 @@ class Command(BaseCommand):
                             cell_addr = f"{get_column_letter(qr_col_idx)}{row_idx}"
                             ws.add_image(img, cell_addr)
                             ws.row_dimensions[row_idx].height = max(
-                                ws.row_dimensions[row_idx].height, 140
+                                ws.row_dimensions[row_idx].height, 120
                             )
 
                 # Вставка single_image
