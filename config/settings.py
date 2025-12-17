@@ -131,6 +131,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles/'
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/isc/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"
+
 BASE_URL = os.environ.get("BASE_URL", default="http://127.0.0.1:8000")
 QR_TEXT_FONT_PATH = BASE_DIR / "static" / "museum" / "fonts" / "DejaVuSans.ttf"
 

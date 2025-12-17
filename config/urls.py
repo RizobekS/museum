@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
@@ -26,6 +27,7 @@ from museum.autocomplete import SectionAutocomplete
 from museum.views import ExhibitListView
 
 urlpatterns = [
+                  path("accounts/", include("django.contrib.auth.urls")),
                   path("admin/museum/section-autocomplete/", SectionAutocomplete.as_view(),
                        name="section-autocomplete"),
                   path("admin/", admin.site.urls),
@@ -36,7 +38,7 @@ urlpatterns = [
 
                   # корень -> /isc/
                   path("", RedirectView.as_view(url="/isc/", permanent=False)),
-                  path("isc/", ExhibitListView.as_view(), name="exhibit_list_plain"),
+                  path("isc/", login_required(ExhibitListView.as_view()), name="exhibit_list_plain"),
 
                   # основной сайт без языкового префикса
                   path("", include("museum.urls")),

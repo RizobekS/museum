@@ -1,5 +1,6 @@
 # apps/museum/urls.py
 from django.urls import path
+from django.contrib.auth.decorators import login_required
 from .views import (
     ExhibitListView,
     ExhibitDetailByCodesView,
@@ -11,9 +12,9 @@ app_name = "museum"
 
 urlpatterns = [
     # Список экспонатов
-    path("", ExhibitListView.as_view(), name="exhibit_list"),
+    path("", login_required(ExhibitListView.as_view()), name="exhibit_list"),
     path("sections-json/", sections_by_block, name="sections_by_block"),
-    path("<slug:museum_slug>/", ExhibitListView.as_view(), name="exhibit_list_museum"),
+    path("<slug:museum_slug>/", login_required(ExhibitListView.as_view()), name="exhibit_list_museum"),
 
     path("<slug:museum_code>/<str:exhibit_code>/", ExhibitDetailByCodesView.as_view(),
          name="exhibit_detail_qr"),

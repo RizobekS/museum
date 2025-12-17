@@ -1,6 +1,8 @@
 # apps/museum/views.py
 import os
 from typing import Literal, Tuple, Optional
+
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import JsonResponse, Http404, HttpRequest
 from django.shortcuts import get_object_or_404, render
@@ -76,6 +78,10 @@ class ExhibitListView(ListView):
     Список экспонатов. Показываем локализованный заголовок и короткое описание.
     Шаблон: museum/exhibit_list.html
     """
+
+    login_url = "/accounts/login/"  # или settings.LOGIN_URL
+    redirect_field_name = "next"
+
     model = Exhibit
     context_object_name = "exhibits"
     template_name = "museum/exhibit_list.html"
